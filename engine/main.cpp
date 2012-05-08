@@ -23,7 +23,7 @@ int PASCAL WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdL
    GetModuleFileNameA(NULL, filename, 4096);
    filename[strlen(filename)-4] = 0;
    //sprintf(gameLib, "%s.dll", filename);
-   sprintf(gameLib, "_pyT3D.pyd", filename);
+   sprintf(gameLib, "_scriptT3D.pyd", filename);
 
    HMODULE hGame = LoadLibraryA(gameLib);
 

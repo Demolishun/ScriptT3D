@@ -74,7 +74,7 @@ class Namespace
             FloatCallbackType,
             VoidCallbackType,
             BoolCallbackType,
-			// pyT3D
+			// scriptT3D
 			extScriptCallbackType
          };
 
@@ -125,7 +125,7 @@ class Namespace
             VoidCallback mVoidCallbackFunc;
             FloatCallback mFloatCallbackFunc;
             BoolCallback mBoolCallbackFunc;
-			// pyT3D
+			// scriptT3D
 			ScriptStringCallback mScriptStringCallbackFunc;
             const char *mGroupName;
             const char *mCallbackName;
@@ -173,7 +173,7 @@ class Namespace
 
       void addScriptCallback( const char *funcName, const char *usage, ConsoleFunctionHeader* header = NULL );
 
-	  // pyT3D
+	  // scriptT3D
 	  void addScriptCommand( StringTableEntry name, ScriptStringCallback, const char *usage, S32 minArgs, S32 maxArgs, bool toolOnly = false, ConsoleFunctionHeader* header = NULL );
 
       void markGroup(const char* name, const char* usage);

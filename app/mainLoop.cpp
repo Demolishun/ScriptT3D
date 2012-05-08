@@ -370,7 +370,7 @@ bool StandardMainLoop::handleCommandLine( S32 argc, const char **argv )
    Torque::FS::SetCwd( "game:/" );
 
    // Set our working directory.
-   // pyT3D
+   // scriptT3D
    if(dStrnicmp(Platform::getExecutableName(),"python",6) == 0){
       // if being launched from Python
       Platform::setMainDotCsDir( Platform::getCurrentDirectory() );

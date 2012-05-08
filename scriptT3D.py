@@ -13,20 +13,20 @@ if version_info >= (2,6,0):
         import imp
         fp = None
         try:
-            fp, pathname, description = imp.find_module('_pyT3D', [dirname(__file__)])
+            fp, pathname, description = imp.find_module('_scriptT3D', [dirname(__file__)])
         except ImportError:
-            import _pyT3D
-            return _pyT3D
+            import _scriptT3D
+            return _scriptT3D
         if fp is not None:
             try:
-                _mod = imp.load_module('_pyT3D', fp, pathname, description)
+                _mod = imp.load_module('_scriptT3D', fp, pathname, description)
             finally:
                 fp.close()
             return _mod
-    _pyT3D = swig_import_helper()
+    _scriptT3D = swig_import_helper()
     del swig_import_helper
 else:
-    import _pyT3D
+    import _scriptT3D
 del version_info
 try:
     _swig_property = property
@@ -69,22 +69,6 @@ except AttributeError:
 
 swig_RestrictedAttributes = ["this","thisown"]
 
-
-def init(*args):
-  return _pyT3D.init(*args)
-init = _pyT3D.init
-
-def tick():
-  return _pyT3D.tick()
-tick = _pyT3D.tick
-
-def shutdown():
-  return _pyT3D.shutdown()
-shutdown = _pyT3D.shutdown
-
-def isdebugbuild():
-  return _pyT3D.isdebugbuild()
-isdebugbuild = _pyT3D.isdebugbuild
 def BuildExecString(objName,splitval,name,*args):
 	targs = ""
 	amax = len(args)
@@ -164,22 +148,22 @@ class SimObject(_object):
     		#	raise AttributeError(attribute, "Failed to get attribute value.")
     		return AttributeObject(ret, (self,attribute))
 
-    def IsAttribute(self, *args): return _pyT3D.SimObject_IsAttribute(self, *args)
-    def IsMethod(self, *args): return _pyT3D.SimObject_IsMethod(self, *args)
-    def GetAttribute(self, *args): return _pyT3D.SimObject_GetAttribute(self, *args)
-    def SetAttribute(self, *args): return _pyT3D.SimObject_SetAttribute(self, *args)
-    def CallMethod(self, *args): return _pyT3D.SimObject_CallMethod(self, *args)
+    def IsAttribute(self, *args): return _scriptT3D.SimObject_IsAttribute(self, *args)
+    def IsMethod(self, *args): return _scriptT3D.SimObject_IsMethod(self, *args)
+    def GetAttribute(self, *args): return _scriptT3D.SimObject_GetAttribute(self, *args)
+    def SetAttribute(self, *args): return _scriptT3D.SimObject_SetAttribute(self, *args)
+    def CallMethod(self, *args): return _scriptT3D.SimObject_CallMethod(self, *args)
     def __init__(self): 
-        this = _pyT3D.new_SimObject()
+        this = _scriptT3D.new_SimObject()
         try: self.this.append(this)
         except: self.this = this
-    __swig_destroy__ = _pyT3D.delete_SimObject
+    __swig_destroy__ = _scriptT3D.delete_SimObject
     __del__ = lambda self : None;
-SimObject_swigregister = _pyT3D.SimObject_swigregister
+SimObject_swigregister = _scriptT3D.SimObject_swigregister
 SimObject_swigregister(SimObject)
-ExportCallback = _pyT3D.ExportCallback
-ExportObject = _pyT3D.ExportObject
-ExportConsumer = _pyT3D.ExportConsumer
+ExportCallback = _scriptT3D.ExportCallback
+ExportObject = _scriptT3D.ExportObject
+ExportConsumer = _scriptT3D.ExportConsumer
 
 class Sim(_object):
     __swig_setmethods__ = {}
@@ -187,13 +171,13 @@ class Sim(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, Sim, name)
     __repr__ = _swig_repr
-    def FindObject(self, *args): return _pyT3D.Sim_FindObject(self, *args)
-    def GetVariable(self, *args): return _pyT3D.Sim_GetVariable(self, *args)
-    def SetVariable(self, *args): return _pyT3D.Sim_SetVariable(self, *args)
-    def IsFunction(self, *args): return _pyT3D.Sim_IsFunction(self, *args)
-    def Evaluate(self, *args): return _pyT3D.Sim_Evaluate(self, *args)
-    def Execute(self, *args): return _pyT3D.Sim_Execute(self, *args)
-    def ExecuteFailed(self): return _pyT3D.Sim_ExecuteFailed(self)
+    def FindObject(self, *args): return _scriptT3D.Sim_FindObject(self, *args)
+    def GetVariable(self, *args): return _scriptT3D.Sim_GetVariable(self, *args)
+    def SetVariable(self, *args): return _scriptT3D.Sim_SetVariable(self, *args)
+    def IsFunction(self, *args): return _scriptT3D.Sim_IsFunction(self, *args)
+    def Evaluate(self, *args): return _scriptT3D.Sim_Evaluate(self, *args)
+    def Execute(self, *args): return _scriptT3D.Sim_Execute(self, *args)
+    def ExecuteFailed(self): return _scriptT3D.Sim_ExecuteFailed(self)
     # redefine for accessing Sim based objects, variables and functions
     # save original function
     __setattr_org__ = __setattr__
@@ -218,7 +202,7 @@ class Sim(_object):
     	
     # dictionary style access to Sim based objects, variables and functions
     def __setitem__(self, key, value):		
-    	setattr = Sim().SetVariable(key, value)
+    	setattr = self.SetVariable(key, value)
     	if setattr:
     		return
     		
@@ -228,10 +212,10 @@ class Sim(_object):
     	key = str(key)
     	
     	# find attribute in console if possible
-    	sobj = Sim().FindObject(key)
+    	sobj = self.FindObject(key)
     	if sobj is not None:
     		return sobj
-    	svar = Sim().GetVariable(key)
+    	svar = self.GetVariable(key)
     	if len(svar):
     		return svar
     	
@@ -245,27 +229,27 @@ class Sim(_object):
     	else:
     		fname = [key]
     	if len(fname) == 1:
-    		fbool = Sim().IsFunction(None,fname[0])
+    		fbool = self.IsFunction(None,fname[0])
     		if fbool:
     			def tfunc(*args):
     				#print "function call:",fname[0]
     				#fcall = BuildExecString(None,None,fname[0],*args)
-    				#ret = Sim().Evaluate(fcall)
+    				#ret = self.Evaluate(fcall)
     				targs = [fname[0]]
     				for arg in args:
     					targs.append(str(arg))
-    				ret = Sim().Execute(None,len(targs),targs)
+    				ret = self.Execute(None,len(targs),targs)
     				return ret	
     			return tfunc
     	elif len(fname) == 2:
-    		fbool = Sim().IsFunction(fname[0],fname[1])
+    		fbool = self.IsFunction(fname[0],fname[1])
     		if fbool:
     			#print "function call:",fname[0]+splitval+fname[1]
     			if splitval == "::":
     				def tfunc(*args):
     					fcall = BuildExecString(fname[0],splitval,fname[1],*args)
     					#print "BuildExecString",fcall
-    					ret = Sim().Evaluate(fcall)
+    					ret = self.Evaluate(fcall)
     					return ret
     				return tfunc
     			else:
@@ -273,8 +257,8 @@ class Sim(_object):
     					targs = [fname[1],""]
     					for arg in args:
     						targs.append(str(arg))
-    					ret = Sim().Execute(fname[0],len(targs),targs)
-    					if Sim().ExecuteFailed():
+    					ret = self.Execute(fname[0],len(targs),targs)
+    					if self.ExecuteFailed():
     						raise KeyError(key,"not a valid SimObject in function call.")
     					return ret
     				return tfunc
@@ -285,15 +269,32 @@ class Sim(_object):
     def __str__(self):
     	return "Sim interface for console methods."
 
+
     def __init__(self): 
-        this = _pyT3D.new_Sim()
+        this = _scriptT3D.new_Sim()
         try: self.this.append(this)
         except: self.this = this
-    __swig_destroy__ = _pyT3D.delete_Sim
+    __swig_destroy__ = _scriptT3D.delete_Sim
     __del__ = lambda self : None;
-Sim_swigregister = _pyT3D.Sim_swigregister
+Sim_swigregister = _scriptT3D.Sim_swigregister
 Sim_swigregister(Sim)
 
+
+def init(*args):
+  return _scriptT3D.init(*args)
+init = _scriptT3D.init
+
+def tick():
+  return _scriptT3D.tick()
+tick = _scriptT3D.tick
+
+def shutdown():
+  return _scriptT3D.shutdown()
+shutdown = _scriptT3D.shutdown
+
+def isdebugbuild():
+  return _scriptT3D.isdebugbuild()
+isdebugbuild = _scriptT3D.isdebugbuild
 # This file is compatible with both classic and new-style classes.
 
 

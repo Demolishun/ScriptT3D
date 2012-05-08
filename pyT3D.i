@@ -1,47 +1,3 @@
-/*
-//-----------------------------------------------------------------------------
-// pyT3D
-// Copyright Demolishun Consulting 2011
-//-----------------------------------------------------------------------------
-*/
-/* File: pyT3D.i */
-
-/*
-SWIG processing in VC++:
-- Create an external tool under Tools->External Tools...
-- Call the tool SWIG and point to your swig.exe executable for the 'Command'.
-- Add the following Arguments: -c++ -python $(ItemPath)
-- Deselect Prompt on Arguments (optional)
-- Select Use Output Window (optional)
-- Make pyT3D.i the current document and select the tool from Tools->SWIG
-This will build the pyT3D_wrap.cxx and the pyT3D.py files.
-*/
-
-/*
-Custom build step for copying pyT3D.py to game folder of project.  
-This will always copy latest pyT3D.py file to game directory every time a Build is performed.
-Command Line: copy /V/Y "$(InputPath)" "$(TargetDir)"
-Desciption: Copying pyT3D.py to game directory
-Outputs: "$(InputDir)bogus.txt"
-Additional Dependencies:
-*/
-
-/*
-Callback Exporting:
-1. If is a method of a Python object callback function will require a 'self' parameter.
-2. If is called as a method of a TS object then function will require a 'this' paramter.
-3. The pyScriptCallback will need to detect if function is a method of Python object and/or a method of a TS object.
-4. For prebuilt objects we may not be able to satisfy item 2.  When exporting objects we don't want to have to modify
-the object to accept the object parameter.
-*/
-
-%module pyT3D
-
-%{
-#define SWIG_FILE_WITH_INIT
-#include "pyT3D.h"
-%}
-
 // global data for all objects
 %pythoncode %{
 swig_RestrictedAttributes = ["this","thisown"]
@@ -56,11 +12,10 @@ swig_RestrictedAttributes = ["this","thisown"]
 	
 	$1 = PyInt_AsLong($input);
 }
-//%typemap(in) U32 = S32;
+
 %typemap(out) S32,U32 {
     $result = PyInt_FromLong($1);
 }
-//%typemap(out) U32 = S32;
 
 %typecheck(SWIG_TYPECHECK_INTEGER)
 	S32,U32
@@ -68,9 +23,8 @@ swig_RestrictedAttributes = ["this","thisown"]
 	$1 = (PyInt_Check($input) || PyLong_Check($input)) ? 1 : 0;
 }
 
-
 // Grab a Python function object as a Python object.
-%typemap(python,in) PyObject *pyfunc {
+%typemap(in) PyObject *pyfunc {
   if (!PyCallable_Check($input)) {
       PyErr_SetString(PyExc_TypeError, "Need a callable object!");
       return NULL;
@@ -79,7 +33,7 @@ swig_RestrictedAttributes = ["this","thisown"]
 }
 
 // Type mapping for grabbing a FILE * from Python
-%typemap(python,in) FILE * {
+%typemap(in) FILE * {
   if (!PyFile_Check($input)) {
       PyErr_SetString(PyExc_TypeError, "Need a file!");
       return NULL;
@@ -116,69 +70,15 @@ swig_RestrictedAttributes = ["this","thisown"]
   free((char *) $1);
 }
 
-%rename("%(strip:[torque_engine])s") "";
-// engine startup/shutdown
-int torque_engineinit(S32 argc, const char **argv);
-//void torque_enginesignalshutdown();
-
-// engine loop
-int torque_enginetick();
-
-// engine state/events
-int torque_engineshutdown();
-%rename("%(strip:[torque_])s") "";
-//void torque_reset();
-
-// util
-bool torque_isdebugbuild();
-//%nothreadallow;
-//const char* torque_getexecutablepath();
-//%clearnothreadallow;
-//void torque_setexecutablepath(const char* directory);
-//void torque_resizewindow(S32 width, S32 height);
-//void torque_setwebdeployment(); 
-
-// console
-//const char* torque_evaluate(const char* code);
-//const char* torque_getvariable(const char* name);
-//void torque_setvariable(const char* name, const char* value);
-//void torque_exportstringcallback(StringCallback cb, const char *nameSpace, const char *funcName, const char* usage,  S32 minArgs, S32 maxArgs);
-//const char * torque_callscriptfunction(const char* nameSpace, const char* name, S32 argc, const char ** argv);
-//const char* torque_callsecurefunction(const char* nameSpace, const char* name, S32 argc, const char ** argv);
-//void torque_addsecurefunction(const char* nameSpace, const char* fname);
-%rename("%(strip:[script_])s") "";
-//const char * script_getconsolexml();
-
-%rename("MSWIN_%(strip:[torque_])s") "";
-// platform specific
-//void* torque_gethwnd();
-//void torque_directmessage(U32 message, U32 wparam, U32 lparam);
-
-// vars
-%rename("%(strip:[torque_])s") "";
-//const char* torque_getvariable(const char* name);
-//void torque_setvariable(const char* name, const char* value);
+%{
+	// function def
+	static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc, const char **argv);
+%}
 
 // callbacks
 %{
 // util function 
 #define PyPRINTOBJ(obj) PyString_AsString(PyObject_Repr(obj))
-
-//
-// functions for use with extScriptCBObject
-// 
-// cleanup stored python objects
-void pyScriptCBObjectFunction(void *function, int numparameters, void *parameters){
-	// protect the GIL
-	PyGILState_STATE gstate;
-	gstate = PyGILState_Ensure();
-	
-	Py_XDECREF((PyObject *)function);
-	Py_XDECREF((PyObject *)parameters);
-	
-	// protect the GIL
-	PyGILState_Release(gstate);
-}
 
 // 
 // overriden python version of extCallBackObject
@@ -478,12 +378,10 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 	PyObject *pyobj=NULL, *tmpfunc, *tuple;
 	//extScriptCBObject *tmpSBObject;
 	pyExtCallBackObject *tmpSBObject;
-	struct MarshalNativeEntry *mneEntry = NULL;
-	struct MarshalNativeEntry mne;
 	Namespace::Entry *nsEntry = NULL;
 	
 	// buffer for temp strings
-	char tempStr[512];
+	//char tempStr[512];
 	const char *retstr = "";
 	
 	// add attribute name to StringTable
@@ -598,7 +496,7 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 		PyErr_Clear();
 	}else{
 		// get results
-		const char *tmpstr = NULL;
+		//const char *tmpstr = NULL;
 		if(result != Py_None){
 			PyObject *resconv = PyObject_Str(result);
 			retstr = Con::getReturnBuffer(PyString_AsString(resconv));
@@ -626,7 +524,7 @@ static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
 	PyObject *pyfunc;
 	const char *name;
 	const char *usage;
-	U32 minargs, maxargs;
+	//U32 minargs, maxargs;
 	const char *ns = NULL;
 	bool override = false;
 	
@@ -953,7 +851,7 @@ public:
 	%}	
 };
 
-%addmethods SimObject {
+%extend SimObject {
 	// self = this pointer
 	bool IsAttribute(const char* attribname, bool includeStatic = true, bool includeDynamic = true){
 		return self->isField(attribname, includeStatic, includeDynamic);
@@ -976,9 +874,10 @@ public:
 	}
 }
 
-%rename("Sim") "SimObjs";
-class SimObjs {
+%rename("Sim") "SimSpace";
+class SimSpace {
 public:
+	//static SimSpace& getInstance();
 	SimObject * FindObject(S32 param);
 	SimObject * FindObject(const char *param);
 	const char* GetVariable(const char *name);
@@ -1013,7 +912,7 @@ public:
 		
 	# dictionary style access to Sim based objects, variables and functions
 	def __setitem__(self, key, value):		
-		setattr = Sim().SetVariable(key, value)
+		setattr = self.SetVariable(key, value)
 		if setattr:
 			return
 			
@@ -1023,10 +922,10 @@ public:
 		key = str(key)
 		
 		# find attribute in console if possible
-		sobj = Sim().FindObject(key)
+		sobj = self.FindObject(key)
 		if sobj is not None:
 			return sobj
-		svar = Sim().GetVariable(key)
+		svar = self.GetVariable(key)
 		if len(svar):
 			return svar
 		
@@ -1040,27 +939,27 @@ public:
 		else:
 			fname = [key]
 		if len(fname) == 1:
-			fbool = Sim().IsFunction(None,fname[0])
+			fbool = self.IsFunction(None,fname[0])
 			if fbool:
 				def tfunc(*args):
 					#print "function call:",fname[0]
 					#fcall = BuildExecString(None,None,fname[0],*args)
-					#ret = Sim().Evaluate(fcall)
+					#ret = self.Evaluate(fcall)
 					targs = [fname[0]]
 					for arg in args:
 						targs.append(str(arg))
-					ret = Sim().Execute(None,len(targs),targs)
+					ret = self.Execute(None,len(targs),targs)
 					return ret	
 				return tfunc
 		elif len(fname) == 2:
-			fbool = Sim().IsFunction(fname[0],fname[1])
+			fbool = self.IsFunction(fname[0],fname[1])
 			if fbool:
 				#print "function call:",fname[0]+splitval+fname[1]
 				if splitval == "::":
 					def tfunc(*args):
 						fcall = BuildExecString(fname[0],splitval,fname[1],*args)
 						#print "BuildExecString",fcall
-						ret = Sim().Evaluate(fcall)
+						ret = self.Evaluate(fcall)
 						return ret
 					return tfunc
 				else:
@@ -1068,8 +967,8 @@ public:
 						targs = [fname[1],""]
 						for arg in args:
 							targs.append(str(arg))
-						ret = Sim().Execute(fname[0],len(targs),targs)
-						if Sim().ExecuteFailed():
+						ret = self.Execute(fname[0],len(targs),targs)
+						if self.ExecuteFailed():
 							raise KeyError(key,"not a valid SimObject in function call.")
 						return ret
 					return tfunc
@@ -1079,8 +978,6 @@ public:
 
 	def __str__(self):
 		return "Sim interface for console methods."
+
 	%}	
 };
-
-%addmethods extScriptObject {
-}

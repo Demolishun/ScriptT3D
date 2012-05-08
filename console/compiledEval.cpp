@@ -1726,7 +1726,7 @@ breakContinue:
                            STR.setIntValue(result);
                         break;
                      }
-					 // pyT3D
+					 // scriptT3D
 					 case Namespace::Entry::extScriptCallbackType:
                      {
 						const char *ret = nsEntry->cb.mScriptStringCallbackFunc(gEvalState.thisObject, nsEntry->mNamespace, callArgc, callArgv);

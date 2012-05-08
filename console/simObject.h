@@ -432,7 +432,7 @@ class SimObject: public ConsoleObject
       /// @param   slotName    Field to access.
       /// @param   array       String containing index into array
       ///                      (if field is an array); if NULL, it is ignored.
-	  // pyT3D added virtual
+	  // scriptT3D added virtual
       virtual const char *getDataField(StringTableEntry slotName, const char *array);
 
       /// Set the value of a field on the object.
@@ -443,7 +443,7 @@ class SimObject: public ConsoleObject
       /// @param   slotName    Field to access.
       /// @param   array       String containing index into array; if NULL, it is ignored.
       /// @param   value       Value to store.
-	  // pyT3D added virtual
+	  // scriptT3D added virtual
       virtual void setDataField(StringTableEntry slotName, const char *array, const char *value);
 
       /// Get the type of a field on the object.

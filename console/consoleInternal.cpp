@@ -1225,7 +1225,7 @@ void Namespace::addScriptCallback( const char *funcName, const char *usage, Cons
    ent->cb.mCallbackName = funcName;
 }
 
-// pyT3D
+// scriptT3D
 void Namespace::addScriptCommand( StringTableEntry name, ScriptStringCallback cb, const char *usage, S32 minArgs, S32 maxArgs, bool isToolOnly, ConsoleFunctionHeader* header )
 {
    Entry *ent = createLocalEntry(name);
@@ -1314,7 +1314,7 @@ const char *Namespace::Entry::execute(S32 argc, const char **argv, ExprEvalState
          dSprintf(returnBuffer, sizeof(returnBuffer), "%d",
             (U32)cb.mBoolCallbackFunc(state->thisObject, argc, argv));
          return returnBuffer;
-	  // pyT3D
+	  // scriptT3D
       case extScriptCallbackType:
 		 return cb.mScriptStringCallbackFunc(state->thisObject, this->mNamespace, argc, argv);
    }

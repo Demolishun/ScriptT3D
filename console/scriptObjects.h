@@ -20,7 +20,7 @@ class ScriptObject : public SimObject
 
 public:
    ScriptObject();
-   // pyT3D : made virtual
+   // scriptT3D : made virtual
    virtual bool onAdd();
    void onRemove();
 

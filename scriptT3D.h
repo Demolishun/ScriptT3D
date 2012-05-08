@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// pyT3D.h
+// scriptT3D.h
 // Copyright Demolishun Consulting 2011
 //-----------------------------------------------------------------------------
 
@@ -37,8 +37,8 @@ extern void createFontShutdown(void);
 #ifdef TORQUE_OS_MAC
 #endif 
 
-#ifndef _pyT3D_h
-#define _pyT3D_h
+#ifndef _scriptT3D_h
+#define _scriptT3D_h
 
 
 // reference functions
@@ -102,7 +102,7 @@ extern "C" {
 }
 
 // sim
-class SimObjs {
+class SimSpace {
 private:
 	S32 convSimObjectID(const char* param){
 		S32 tid;
@@ -139,11 +139,23 @@ private:
 	}
 
 	bool executeFailed;
-public:
-	SimObjs(){
-		executeFailed = false;
-	}
 
+public:
+	// singleton
+	// bad problems, don't try this for now
+	/*
+	static SimSpace& getInstance()
+	{
+		static SimSpace instance;	// Guaranteed to be destroyed.
+									// Instantiated on first use.
+
+		return instance;
+	}
+	*/
+
+	SimSpace(){executeFailed = false;};
+	
+public:
 	SimObject* FindObject(S32 param){
 		if(param <= 0)
 			return NULL;
@@ -218,7 +230,6 @@ public:
 };
 
 static HashTable<Namespace::Entry*,void*> gScriptCallbackLookup;
-static HashTable<Namespace::Entry*,void*> gConsumerCallbackLookup;
 
 bool isValidIdentifier(const char *name);
 bool isNotNullNotEmptyCString(const char *teststr);
@@ -232,47 +243,6 @@ namespace Con
 };
 
 // storage for function object pointers
-// typedef to support callback object
-typedef void (*extScriptCBObjectFunction)(void *function, int numparameters, void *parameters);
-
-// function def
-static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc, const char **argv);
-
-// callback object for keeping track of scripting language callbacks and data
-class extScriptCBObject
-{
-	public:
-		enum CBType
-		{
-			PythonCallback = 0,
-			PythonObject = 1,
-		};	
-	private:
-		CBType callbacktype;
-		// pointer to whatever you want, can be a function, can be an object
-		void *function;
-		// store parameters for use by callback function
-		int numparameters;
-		void *parameters;
-		// a function defined by the scripting language to cleanup stored objects
-		extScriptCBObjectFunction cleanupObjects;
-	public:
-		extScriptCBObject(CBType cbtype, void *func, int numparams=0, void *params=NULL, extScriptCBObjectFunction cfunc=NULL){
-			callbacktype = cbtype;
-			function = func;
-			numparameters = numparams;
-			parameters = params;
-			cleanupObjects = cfunc;
-		}
-		~extScriptCBObject(){
-			if(cleanupObjects)
-				(cleanupObjects)(function,numparameters,parameters);
-		}
-		CBType getType(){return callbacktype;}
-		void* getFunction(){return function;}
-		int getNumParameters(){return numparameters;}
-		void* getParameters(){return parameters;}
-};
 
 // ref
 class extScriptObject;

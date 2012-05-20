@@ -12,6 +12,19 @@
 #-------------------------------------------------------------------------------
 #!/usr/bin/env python
 
+# This is an introduction to what can be done.  There may be things I have left out.
+#   If you have a question as to how to do something, or need more info feel free
+#   to post in the resource with your questions or suggestions.  I very much want
+#   people to contribute to this codebase and have some say as to the direction it
+#   takes.  I have only guessed at the usage scenarios this extension will be used
+#   in.  So more input is definitely welcome.
+
+#
+#   For threading information see the scriptT3D_threaded.py file
+#   For multiprocessing information see the scriptT3D_multiprocessing.py file
+#   More examples will be added as time progresses.
+#
+
 import sys
 import scriptT3D
 import sched, time
@@ -121,6 +134,86 @@ try:
     print repr(qobj)
     # get the id for use in evaluate scripts
     print qobj.getID()
+    # show the functions and variables that got exported from the queue object
+    #   This calls the 'dump' function of the SimObject.
+    #   There is a lot of junk in the 'dump', but you can see the methods that got exported like: put, qsize, get
+    qobj.dump()
+    # testing putting something on the queue
+    console.Evaluate("""{0!s}.put("{1!s}");""".format(qobj.getID(),'a message on the queue'))
+    # now test pulling from the queue
+    print "queue message:",q.get_nowait()
+
+    # function callbacks
+    #   These are very interesting because I had to make some decisions to get
+    #   the ability to use any function as a callback, but still have the ability
+    #   to detect which SimObject, if any, it was called against.  If I had not
+    #   made this decision then it would be harder to export entire objects unless
+    #   I used a different callback mechanism.  I finally decided to use one solid
+    #   mechanism, but for every callback you can still see the SimObject if any
+    #   the function was called against.  This is possible because functions are
+    #   objects themselves and are capable of having attributes set on them.
+
+    # lets create a function to test this on
+    def test_callback():
+        if(hasattr(test_callback,"__SimObject__")):
+            print "Called from the namespace of this object:",test_callback.__SimObject__,test_callback.__SimObject__.getName()
+        else:
+            print "Not called from SimObject namespace"
+
+    # now lets export some callbacks
+    #   callback export syntax: ExportCallback(<function>,"name","namespace"=None,"usage"=None,override=True)
+    #   function is the function or method
+    #   name is the function name in TS
+    #   namespace is the namespace, can be None if not used
+    #   usage is the usage string, can be None if not used
+    #   override is if this will override existing functions, default is True, if false it will kick back an error if override is attempted
+    #   Every parameter after name is optional.
+    engine.ExportCallback(test_callback,"test_callback") # global namespace
+    engine.ExportCallback(test_callback,"test_callback","SimObject") # SimObject namespace
+    console.Evaluate("""test_callback();""") # global call
+    console.Evaluate("""{0!s}.test_callback();""".format(simobj)) # test against simobject we created earlier
+
+    # Callbacks against class methods are the same as above.  Python class callbacks already
+    #   know which Python class they are called on.  Just use the __SimObject__ attribute to find
+    #   out which SimObject called the callback if any.
+
+    # some more info on object exporting
+    # complex class
+    class cattrib(object):
+        def __init__(self):
+            self.attr1 = ['a','b']
+            self.attr2 = (0,1)
+            self.attr3 = {'one':1,'two':2}
+            self.attr4 = int(5)
+            self.attr5 = float(1.2)
+            self.attr6 = str('doodle')
+    # export an instance of the cattrib object
+    cobj = engine.ExportObject(cattrib())
+    # use id to call functions in TS
+    # accessing arrays, tuples, dictionaries, stings, and numbers are supported
+    #   When setting attributes from TS the functions try and maintain data if
+    #   the attribute already exists.  If not it will default to a type like string
+    #   or dictionary as they are easist to convert to a Python representation.
+    #   So if you want a particular datatype then define it on the Python side first.
+    #   Also note that if the key or index for a sequence (array, tuple, dictionary)
+    #   is of the wrong type it will fail to set or read the sequence.  Tuples and strings
+    #   are not able to be written as they are immutable types.
+    console.Evaluate("""echo({0!s}.attr1[1]);""".format(cobj.getId()))
+    console.Evaluate("""echo({0!s}.attr2[0]);""".format(cobj.getId()))
+    console.Evaluate("""echo({0!s}.attr3["two"]);""".format(cobj.getId()))
+    console.Evaluate("""echo({0!s}.attr4);""".format(cobj.getId()))
+    console.Evaluate("""echo({0!s}.attr5);""".format(cobj.getId()))
+    console.Evaluate("""echo({0!s}.attr6);""".format(cobj.getId()))
+
+    # hwnd handle
+    #   This is so other apps can use the T3D hwnd handle.  I have tested this with
+    #   wxPython and it does work.  However, wxPython event system interferes with the
+    #   T3D event system so it is not recommended to be used with wxPython.  Other
+    #   packages I would try to use this with is pyOgre and pyGame.  Those have independent
+    #   event systems that are not needed.  Now, these graphicssystems are not necessarily
+    #   any better than T3D, it is I just wanted to have the capability.  There are other
+    #   GUI systems that might make sense to use with T3D.
+    hwnd = engine.gethwnd()
 
     # run the main loop
     while engine.tick():

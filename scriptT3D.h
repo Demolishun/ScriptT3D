@@ -154,7 +154,9 @@ public:
 	}
 	*/
 
-	SimSpace(){executeFailed = false;};
+	SimSpace(){
+		executeFailed = false;
+	};
 	
 public:
 	SimObject* FindObject(S32 param){
@@ -230,7 +232,7 @@ public:
 	}
 	bool ExecuteFailed(){
 		return executeFailed;
-	}
+	}		
 };
 
 // getting the TS equivalent of a SimObject

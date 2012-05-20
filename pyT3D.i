@@ -93,6 +93,8 @@ swig_RestrictedAttributes = ["this","thisown"]
 // util function 
 #define PyPRINTOBJ(obj) PyString_AsString(PyObject_Repr(obj))
 
+static const char* SimObjectCallbackAttribName = StringTable->insert("__SimObject__");;
+
 // 
 // overriden python version of extCallBackObject
 //
@@ -398,7 +400,8 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 	const char *retstr = "";
 	
 	// add attribute name to StringTable
-	StringTableEntry attrname = StringTable->insert("__SimObject__"); 
+	//StringTableEntry attrname = StringTable->insert("__SimObject__"); 
+	StringTableEntry attrname = SimObjectCallbackAttribName;
 	
 	// external namespace?
 	//bool extNS = false;
@@ -553,7 +556,8 @@ static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
 	//if (!PyArg_ParseTuple(pyargs, "OssII|zb", &pyfunc, &name, &usage, &minargs, &maxargs, &ns, &override))
 	// %native method does not support kwargs in a simple way
 	//if (!PyArg_ParseTupleAndKeywords(pyargs, keywds, "Os|szb", kwlist, &pyfunc, &name, &usage, &ns, &overrides))
-	if (!PyArg_ParseTuple(pyargs, "Os|szb", &pyfunc, &name, &usage, &ns, &overrides)) {
+	// Note: ns (namespace) is now before usage.
+	if (!PyArg_ParseTuple(pyargs, "Os|zzb", &pyfunc, &name, &ns, &usage, &overrides)) {
         return NULL;
 	}
         
@@ -793,7 +797,6 @@ static PyObject * ExportConsumer(PyObject *self, PyObject *pyargs){
 //static PyObject * ExportCallback(PyObject *self, PyObject *pyargs, PyObject *kwargs);
 %native(ExportObject) static PyObject * ExportObject(PyObject *self, PyObject *pyargs);
 %native(ExportConsumer) static PyObject * ExportConsumer(PyObject *self, PyObject *pyargs);
-
 
 %pythoncode %{
 def BuildExecString(objName,splitval,name,*args):

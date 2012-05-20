@@ -1,3 +1,16 @@
+/*
+//-----------------------------------------------------------------------------
+// scriptT3D
+// Copyright Demolishun Consulting (Frank Carney) 2012
+//-----------------------------------------------------------------------------
+*/
+/* File: pyT3D.i */
+
+/*
+This is a contributing file and not meant to be parsed by SWIG directly.
+This file is included in "scriptT3D.i".  Run SWIG against "scriptT3D.i" instead.
+*/
+
 // global data for all objects
 %pythoncode %{
 swig_RestrictedAttributes = ["this","thisown"]
@@ -215,7 +228,7 @@ const char* pyExtCallBackObject::getAttribute(const char *name){
 			ret = PyString_AsString(str);
 	}
 	else{
-		Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
+		//Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
 	}
 	
 	// protect the GIL
@@ -238,7 +251,7 @@ const char* pyExtCallBackObject::getAttribute(const char *name, const char *inde
 	PyObject *obj = (PyObject *)cbObject;
 	PyObject *attr = PyObject_GetAttrString(obj, name);
 	if(!attr){
-		Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
+		//Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
 	}
 	// determine if attribute is a integer sequence
 	else if(IS_PYTHON_INTEGER_SEQUENCE(attr) && !isInteger){
@@ -449,6 +462,7 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 		return "";
 	}
 	int tupleIndex=0;
+	// sneaky way to tell the Python function what SimObject called this function
 	// if there is a simobject then pass as attribute to function
 	if(obj){
 		// convert simobject to python object
@@ -520,21 +534,28 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 
 // exporting Python functions to Torque Script
 static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
+//static PyObject * ExportCallback(PyObject *self, PyObject *pyargs, PyObject *keywds){
 	PyObject *result;
 	PyObject *pyfunc;
 	const char *name;
-	const char *usage;
+	const char *usage = ""; // empty default
 	//U32 minargs, maxargs;
 	const char *ns = NULL;
-	bool override = false;
+	bool overrides = true;
 	
 	// buffer for temp strings
 	char tempStr[512];
 
+	// argument kwlist
+	//static char *kwlist[] = {"function", "name", "usage", "ns", "override", NULL};
+
 	// parse args and bail if args are wrong
 	//if (!PyArg_ParseTuple(pyargs, "OssII|zb", &pyfunc, &name, &usage, &minargs, &maxargs, &ns, &override))
-	if (!PyArg_ParseTuple(pyargs, "Oss|zb", &pyfunc, &name, &usage, &ns, &override))
+	// %native method does not support kwargs in a simple way
+	//if (!PyArg_ParseTupleAndKeywords(pyargs, keywds, "Os|szb", kwlist, &pyfunc, &name, &usage, &ns, &overrides))
+	if (!PyArg_ParseTuple(pyargs, "Os|szb", &pyfunc, &name, &usage, &ns, &overrides)) {
         return NULL;
+	}
         
     // check for empty namespace strings
     if(ns && !dStrlen(ns))
@@ -563,7 +584,7 @@ static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
 	// determine if console function exists already if it does bail with exception
 	// GetEntry will return non NULL if a function exists either in ns::name() or name() forms
 	struct MarshalNativeEntry *nEntry = NULL;
-	if(!override)
+	if(!overrides)
 		if(nEntry = script_get_namespace_entry(ns, name)) {
 			dSprintf(tempStr, 512, "%s::%s function was previously exported or was defined in Torque script",nEntry->nameSpace,nEntry->name);
 			PyErr_SetString(PyExc_ValueError, tempStr);
@@ -652,12 +673,12 @@ static PyObject * ExportObject(PyObject *self, PyObject *pyargs){
 		tmpsobj->SetObject(newcbobj);
     }
     else{
-		dSprintf(tempStr, 512, "ExportObject failed to creat a extScriptObject. NULL was returned. %s",PyPRINTOBJ(pyobj));
+		dSprintf(tempStr, 512, "ExportObject failed to create a extScriptObject. NULL was returned. %s",PyPRINTOBJ(pyobj));
         PyErr_SetString(PyExc_MemoryError, tempStr);
         return NULL;
     }
 	
-	// increment ref count for python function object
+	// increment ref count for python object
 	Py_XINCREF(pyobj);
     
     // ret object ref
@@ -665,6 +686,7 @@ static PyObject * ExportObject(PyObject *self, PyObject *pyargs){
 		// convert simobject to python object
 		PyObject *pyso = SWIG_NewPointerObj(SWIG_as_voidptr(tmpsobj), SWIGTYPE_p_SimObject, 0 |  0 );
 		Py_INCREF(pyso);
+
 		result = pyso;
 	}else{
 		/* Boilerplate to return "None" */
@@ -768,8 +790,10 @@ static PyObject * ExportConsumer(PyObject *self, PyObject *pyargs){
 %}
 
 %native(ExportCallback) static PyObject * ExportCallback(PyObject *self, PyObject *pyargs);
+//static PyObject * ExportCallback(PyObject *self, PyObject *pyargs, PyObject *kwargs);
 %native(ExportObject) static PyObject * ExportObject(PyObject *self, PyObject *pyargs);
 %native(ExportConsumer) static PyObject * ExportConsumer(PyObject *self, PyObject *pyargs);
+
 
 %pythoncode %{
 def BuildExecString(objName,splitval,name,*args):
@@ -807,10 +831,10 @@ class SimObject {
 public:	
 	%pythoncode %{
 	def __str__(self):
-		#return "SimObject: console/simObject.h"
-		return self.getName()
-	def __repr__(self):
 		return self.getID()
+	def __repr__(self):
+		# this returns a string of an object script in TS
+		return self.GetScript()
 		
 	# redefine for accessing attributes and methods
 	# save original function
@@ -820,7 +844,7 @@ public:
 			self.__setattr_org__(attribute, value)
 			return
 			
-		print attribute
+		#print attribute
 		# explicit conversion
 		value = str(value)
 					
@@ -872,6 +896,10 @@ public:
 	const char* CallMethod(S32 argc, const char** argv){
 		return Con::execute(self, argc, argv);
 	}
+	// write object script to string
+	const char* GetScript(){
+		return getSimObjectScript(self);
+	}
 }
 
 %rename("Sim") "SimSpace";
@@ -885,6 +913,7 @@ public:
 	bool IsFunction(const char *nameSpace, const char *name);
 	const char* Evaluate(const char* code);
 	const char* Execute(const char* simobj, S32 argc, const char** argv);
+	//const char* Execute(S32 argc, const char** argv);
 	bool ExecuteFailed();
 	
 	%pythoncode %{

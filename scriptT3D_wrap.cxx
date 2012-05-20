@@ -3187,7 +3187,7 @@ const char* pyExtCallBackObject::getAttribute(const char *name){
 			ret = PyString_AsString(str);
 	}
 	else{
-		Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
+		//Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
 	}
 	
 	// protect the GIL
@@ -3210,7 +3210,7 @@ const char* pyExtCallBackObject::getAttribute(const char *name, const char *inde
 	PyObject *obj = (PyObject *)cbObject;
 	PyObject *attr = PyObject_GetAttrString(obj, name);
 	if(!attr){
-		Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
+		//Con::errorf("pyExtCallBackObject::getAttribute: no attribute %s", name);
 	}
 	// determine if attribute is a integer sequence
 	else if(IS_PYTHON_INTEGER_SEQUENCE(attr) && !isInteger){
@@ -3421,6 +3421,7 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 		return "";
 	}
 	int tupleIndex=0;
+	// sneaky way to tell the Python function what SimObject called this function
 	// if there is a simobject then pass as attribute to function
 	if(obj){
 		// convert simobject to python object
@@ -3492,21 +3493,28 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
 
 // exporting Python functions to Torque Script
 static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
+//static PyObject * ExportCallback(PyObject *self, PyObject *pyargs, PyObject *keywds){
 	PyObject *result;
 	PyObject *pyfunc;
 	const char *name;
-	const char *usage;
+	const char *usage = ""; // empty default
 	//U32 minargs, maxargs;
 	const char *ns = NULL;
-	bool override = false;
+	bool overrides = true;
 	
 	// buffer for temp strings
 	char tempStr[512];
 
+	// argument kwlist
+	//static char *kwlist[] = {"function", "name", "usage", "ns", "override", NULL};
+
 	// parse args and bail if args are wrong
 	//if (!PyArg_ParseTuple(pyargs, "OssII|zb", &pyfunc, &name, &usage, &minargs, &maxargs, &ns, &override))
-	if (!PyArg_ParseTuple(pyargs, "Oss|zb", &pyfunc, &name, &usage, &ns, &override))
+	// %native method does not support kwargs in a simple way
+	//if (!PyArg_ParseTupleAndKeywords(pyargs, keywds, "Os|szb", kwlist, &pyfunc, &name, &usage, &ns, &overrides))
+	if (!PyArg_ParseTuple(pyargs, "Os|szb", &pyfunc, &name, &usage, &ns, &overrides)) {
         return NULL;
+	}
         
     // check for empty namespace strings
     if(ns && !dStrlen(ns))
@@ -3535,7 +3543,7 @@ static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
 	// determine if console function exists already if it does bail with exception
 	// GetEntry will return non NULL if a function exists either in ns::name() or name() forms
 	struct MarshalNativeEntry *nEntry = NULL;
-	if(!override)
+	if(!overrides)
 		if(nEntry = script_get_namespace_entry(ns, name)) {
 			dSprintf(tempStr, 512, "%s::%s function was previously exported or was defined in Torque script",nEntry->nameSpace,nEntry->name);
 			PyErr_SetString(PyExc_ValueError, tempStr);
@@ -3624,12 +3632,12 @@ static PyObject * ExportObject(PyObject *self, PyObject *pyargs){
 		tmpsobj->SetObject(newcbobj);
     }
     else{
-		dSprintf(tempStr, 512, "ExportObject failed to creat a extScriptObject. NULL was returned. %s",PyPRINTOBJ(pyobj));
+		dSprintf(tempStr, 512, "ExportObject failed to create a extScriptObject. NULL was returned. %s",PyPRINTOBJ(pyobj));
         PyErr_SetString(PyExc_MemoryError, tempStr);
         return NULL;
     }
 	
-	// increment ref count for python function object
+	// increment ref count for python object
 	Py_XINCREF(pyobj);
     
     // ret object ref
@@ -3637,6 +3645,7 @@ static PyObject * ExportObject(PyObject *self, PyObject *pyargs){
 		// convert simobject to python object
 		PyObject *pyso = SWIG_NewPointerObj(SWIG_as_voidptr(tmpsobj), SWIGTYPE_p_SimObject, 0 |  0 );
 		Py_INCREF(pyso);
+
 		result = pyso;
 	}else{
 		/* Boilerplate to return "None" */
@@ -4010,6 +4019,9 @@ SWIGINTERN void SimObject_SetAttribute__SWIG_0(SimObject *self,char const *attri
 SWIGINTERN char const *SimObject_CallMethod(SimObject *self,S32 argc,char const **argv){
 		return Con::execute(self, argc, argv);
 	}
+SWIGINTERN char const *SimObject_GetScript(SimObject *self){
+		return getSimObjectScript(self);
+	}
 
   #define SWIG_From_long   PyInt_FromLong 
 
@@ -4018,6 +4030,11 @@ SWIGINTERNINLINE PyObject *
 SWIG_From_int  (int value)
 {    
   return SWIG_From_long  (value);
+}
+
+
+long gethwnd(){
+	return (long)torque_gethwnd();
 }
 
 #ifdef __cplusplus
@@ -4616,6 +4633,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_SimObject_GetScript(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  SimObject *arg1 = (SimObject *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  char *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:SimObject_GetScript",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObject_GetScript" "', argument " "1"" of type '" "SimObject *""'"); 
+  }
+  arg1 = reinterpret_cast< SimObject * >(argp1);
+  result = (char *)SimObject_GetScript(arg1);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_new_SimObject(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *result = 0 ;
@@ -5159,6 +5198,19 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_gethwnd(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  long result;
+  
+  if (!PyArg_ParseTuple(args,(char *)":gethwnd")) SWIG_fail;
+  result = (long)gethwnd();
+  resultobj = SWIG_From_long(static_cast< long >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { (char *)"ExportCallback", ExportCallback, METH_VARARGS, NULL},
@@ -5169,6 +5221,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"SimObject_GetAttribute", _wrap_SimObject_GetAttribute, METH_VARARGS, NULL},
 	 { (char *)"SimObject_SetAttribute", _wrap_SimObject_SetAttribute, METH_VARARGS, NULL},
 	 { (char *)"SimObject_CallMethod", _wrap_SimObject_CallMethod, METH_VARARGS, NULL},
+	 { (char *)"SimObject_GetScript", _wrap_SimObject_GetScript, METH_VARARGS, NULL},
 	 { (char *)"new_SimObject", _wrap_new_SimObject, METH_VARARGS, NULL},
 	 { (char *)"delete_SimObject", _wrap_delete_SimObject, METH_VARARGS, NULL},
 	 { (char *)"SimObject_swigregister", SimObject_swigregister, METH_VARARGS, NULL},
@@ -5186,6 +5239,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"tick", _wrap_tick, METH_VARARGS, NULL},
 	 { (char *)"shutdown", _wrap_shutdown, METH_VARARGS, NULL},
 	 { (char *)"isdebugbuild", _wrap_isdebugbuild, METH_VARARGS, NULL},
+	 { (char *)"gethwnd", _wrap_gethwnd, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 

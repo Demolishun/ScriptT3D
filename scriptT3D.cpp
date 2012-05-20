@@ -1,10 +1,25 @@
 //-----------------------------------------------------------------------------
 // scriptT3D.cpp
-// Copyright Demolishun Consulting 2011
+// Copyright Demolishun Consulting (Frank Carney) 2012
 //-----------------------------------------------------------------------------
 
 #include "scriptT3D.h"
 #include "console/engineAPI.h"
+
+// getting the TS equivalent of a SimObject
+const char* getSimObjectScript(SimObject *obj){
+	// this object grows as needed
+	MemStream tempStream(256);
+
+	obj->write(tempStream,0,0);
+
+	// stuff it into a return buffer
+	char *ret = Con::getReturnBuffer(tempStream.getStreamSize() + 1);  
+	dStrncpy(ret, (char *)tempStream.getBuffer(), tempStream.getStreamSize());
+    ret[tempStream.getStreamSize()-2] = '\0'; // gets rid of "\r\n"
+
+	return ret;
+}
 
 // determine if the string is a valid identifier
 bool isValidIdentifier(const char *name){
@@ -98,7 +113,7 @@ const char *extScriptObject::getDataField(StringTableEntry slotName, const char 
 		return "";  // make sure to return empty string, NULL will cause more processing to occur
 	}
 
-	Con::printf("extScriptObject::getDataField('%s','%s')",slotName, array);
+	//Con::printf("extScriptObject::getDataField('%s','%s')",slotName, array);
 
 	// handle non-sequence attributes
 	if(!array || !dStrlen(array)){
@@ -115,7 +130,7 @@ const char *extScriptObject::getDataField(StringTableEntry slotName, const char 
 	return ret;
 }
 void extScriptObject::setDataField(StringTableEntry slotName, const char *array, const char *value){
-	Con::printf("extScriptObject::setDataField('%s','%s','%s')",slotName, array, value);
+	//Con::printf("extScriptObject::setDataField('%s','%s','%s')",slotName, array, value);
 
 	if(!array || !dStrlen(array)){
 		mObject->setAttribute(slotName, value);

@@ -106,10 +106,10 @@ class SimObject(_object):
     __getattr__ = lambda self, name: _swig_getattr(self, SimObject, name)
     __repr__ = _swig_repr
     def __str__(self):
-    	#return "SimObject: console/simObject.h"
-    	return self.getName()
-    def __repr__(self):
     	return self.getID()
+    def __repr__(self):
+    	# this returns a string of an object script in TS
+    	return self.GetScript()
     	
     # redefine for accessing attributes and methods
     # save original function
@@ -119,7 +119,7 @@ class SimObject(_object):
     		self.__setattr_org__(attribute, value)
     		return
     		
-    	print attribute
+    	#print attribute
     	# explicit conversion
     	value = str(value)
     				
@@ -153,6 +153,7 @@ class SimObject(_object):
     def GetAttribute(self, *args): return _scriptT3D.SimObject_GetAttribute(self, *args)
     def SetAttribute(self, *args): return _scriptT3D.SimObject_SetAttribute(self, *args)
     def CallMethod(self, *args): return _scriptT3D.SimObject_CallMethod(self, *args)
+    def GetScript(self): return _scriptT3D.SimObject_GetScript(self)
     def __init__(self): 
         this = _scriptT3D.new_SimObject()
         try: self.this.append(this)
@@ -295,6 +296,10 @@ shutdown = _scriptT3D.shutdown
 def isdebugbuild():
   return _scriptT3D.isdebugbuild()
 isdebugbuild = _scriptT3D.isdebugbuild
+
+def gethwnd():
+  return _scriptT3D.gethwnd()
+gethwnd = _scriptT3D.gethwnd
 # This file is compatible with both classic and new-style classes.
 
 

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // scriptT3D.h
-// Copyright Demolishun Consulting 2011
+// Copyright Demolishun Consulting (Frank Carney) 2012
 //-----------------------------------------------------------------------------
 
 #include "platform/platform.h"
@@ -15,6 +15,7 @@
 #include "console/consoleInternal.h"
 #include "console/sim.h"
 #include "console/scriptObjects.h"
+#include "core/stream/memStream.h"
 
 #ifdef TORQUE_OS_WIN32
 #include "windowManager/win32/win32Window.h"
@@ -208,6 +209,9 @@ public:
 		//return torque_evaluate(code);
 		return Con::evaluate(code);
 	}
+	const char* Execute(S32 argc, const char** argv){
+		return Con::execute(argc, argv);
+	}
 	const char* Execute(const char* simobj, S32 argc, const char** argv){
 		SimObject *tsim;
 
@@ -228,6 +232,9 @@ public:
 		return executeFailed;
 	}
 };
+
+// getting the TS equivalent of a SimObject
+const char* getSimObjectScript(SimObject *obj);
 
 static HashTable<Namespace::Entry*,void*> gScriptCallbackLookup;
 

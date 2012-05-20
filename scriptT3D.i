@@ -1,7 +1,7 @@
 /*
 //-----------------------------------------------------------------------------
 // scriptT3D
-// Copyright Demolishun Consulting 2011
+// Copyright Demolishun Consulting (Frank Carney) 2012
 //-----------------------------------------------------------------------------
 */
 /* File: scriptT3D.i */
@@ -21,18 +21,14 @@ This will build the scriptT3D_wrap.cxx and the scriptT3D.py files.
 Custom build step for copying scriptT3D.py to game folder of project.  
 This will always copy latest scriptT3D.py file to game directory every time a Build is performed.
 Command Line: copy /V/Y "$(InputPath)" "$(TargetDir)"
-Desciption: Copying "$(InputPath)" to game directory
+Desciption: Copying "$(InputPath)" to game directory "$(TargetDir)"
 Outputs: "$(InputDir)bogus.txt"
 Additional Dependencies:
 */
 
 /*
 Callback Exporting:
-1. If is a method of a Python object callback function will require a 'self' parameter.
-2. If is called as a method of a TS object then function will require a 'this' paramter.
-3. The pyScriptCallback will need to detect if function is a method of Python object and/or a method of a TS object.
-4. For prebuilt objects we may not be able to satisfy item 2.  When exporting objects we don't want to have to modify
-the object to accept the object parameter.
+If is called as a method of a TS object then function will require a 'this' parameter.
 */
 
 %module scriptT3D
@@ -63,8 +59,14 @@ int torque_enginetick();
 // engine state/events
 int torque_engineshutdown();
 
-
 %rename("%(strip:[torque_])s") "";
-
 // util
 bool torque_isdebugbuild();
+
+// render context
+%{
+long gethwnd(){
+	return (long)torque_gethwnd();
+}
+%}
+long gethwnd();

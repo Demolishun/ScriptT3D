@@ -24,8 +24,9 @@ __check_script3d_thread__ = True
 def mdec_IsScriptT3D_thread(func):
     if __check_script3d_thread__:
         def wrapper(self, *args, **kwargs):
-            assert(threading.current_thread().getName() == self.thread_name)
+            assert threading.current_thread().getName() == self.thread_name, "class method {0!s} called outside of {1!s} thread".format(wrapper.orig_function,self.thread_name)
             return func(self, *args, **kwargs)
+        wrapper.orig_function = func
         return wrapper
     else:
         return func
@@ -33,8 +34,9 @@ def mdec_IsScriptT3D_thread(func):
 def fdec_IsScriptT3D_thread(func, thread_name):
     if __check_script3d_thread__:
         def wrapper(*args, **kwargs):
-            assert(threading.current_thread().getName() == thread_name)
+            assert threading.current_thread().getName() == thread_name, "function {0!s} called outside of {1!s} thread".format(wrapper.orig_function,self.thread_name)
             return func(*args, **kwargs)
+        wrapper.orig_function = func
         return wrapper
     else:
         return func
@@ -42,8 +44,9 @@ def fdec_IsScriptT3D_thread(func, thread_name):
 def mdec_NotScriptT3D_thread(func):
     if __check_script3d_thread__:
         def wrapper(self, *args, **kwargs):
-            assert(threading.current_thread().getName() != self.thread_name)
+            assert threading.current_thread().getName() != self.thread_name, "class method {0!s} called inside of {1!s} thread".format(wrapper.orig_function,self.thread_name)
             return func(self, *args, **kwargs)
+        wrapper.orig_function = func
         return wrapper
     else:
         return func
@@ -51,8 +54,9 @@ def mdec_NotScriptT3D_thread(func):
 def fdec_NotScriptT3D_thread(func, thread_name):
     if __check_script3d_thread__:
         def wrapper(*args, **kwargs):
-            assert(threading.current_thread().getName() != thread_name)
+            assert threading.current_thread().getName() != thread_name, "function called {0!s} inside of {1!s} thread".format(wrapper.orig_function,self.thread_name)
             return func(*args, **kwargs)
+        wrapper.orig_function = func
         return wrapper
     else:
         return func
@@ -117,7 +121,6 @@ class scriptT3D_thread(Thread):
     # redefine to setup custom tick code
     @mdec_IsScriptT3D_thread
     def tick(self):
-        #assert(threading.current_thread().getName() == self.thread_name)
         pass
 
     # redefine to get console messages, not enabled by default
@@ -138,7 +141,7 @@ class scriptT3D_thread(Thread):
 def general_exception(func):
     try:
         func()
-    except Exception,e:
+    except (AssertionError,Exception),e:
         print e
 
 # test program
@@ -155,18 +158,18 @@ def main():
     print main_thread
 
     sthread1 = scriptT3D_thread()
-    #sthread2 = scriptT3D_thread()
+    sthread2 = scriptT3D_thread()
 
     # start 1st thread
     general_exception(sthread1.start)
     # start 2nd thread
     # will except as all scriptT3D_thread objects share the same state
     # if thread is attempted to be started a second time it will except
-    #general_exception(sthread2.start)
+    general_exception(sthread2.start)
 
     #sthread1.join()    # only needed if threads are run as daemons
     #sthread2.join()
-    #sthread1.tick()    # thjs will cause an exception of the main thread, but will not kill the T3D thread
+    general_exception(sthread1.tick)    # thjs will cause an exception as this function is not being called from the right thread
 
     # this will not end the program until all non-daemon threads finish
     print "end of program: waiting for non-daemon threads"

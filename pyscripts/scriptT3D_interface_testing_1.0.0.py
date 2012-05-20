@@ -21,7 +21,6 @@
 
 #
 #   For threading information see the scriptT3D_threaded.py file
-#   For multiprocessing information see the scriptT3D_multiprocessing.py file
 #   More examples will be added as time progresses.
 #
 
@@ -33,6 +32,7 @@ import Queue
 # use for scheduling events
 #   This allows us to have functions occur after a delay.
 #   Good for doing tests that are created before the main loop, but execute in the main loop.
+#   This may or may not be used in this program
 s = sched.scheduler(time.time, time.sleep)
 
 # just assigning the object to a variable
@@ -217,7 +217,8 @@ try:
 
     # run the main loop
     while engine.tick():
-        pass
+        # run any scheduled events
+        s.run()
 
     # normal shutdown
     engine.shutdown()

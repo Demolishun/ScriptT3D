@@ -1,0 +1,251 @@
+Only in ../../../engine/source: T3D
+Only in ../../../engine/source/app: auth.h
+Only in ../../../engine/source/app: badWordFilter.cpp
+Only in ../../../engine/source/app: badWordFilter.h
+Only in ../../../engine/source/app: banList.cpp
+Only in ../../../engine/source/app: banList.h
+Only in ../../../engine/source/app: game.cpp
+Only in ../../../engine/source/app: game.h
+diff -r -d ../../../engine/source/app/mainLoop.cpp ./app/mainLoop.cpp
+373c373,383
+<    Platform::setCurrentDirectory( Platform::getMainDotCsDir() );
+---
+>    // scriptT3D
+>    if(dStrnicmp(Platform::getExecutableName(),"python",6) == 0){
+>       // if being launched from Python
+>       Platform::setMainDotCsDir( Platform::getCurrentDirectory() );
+>       //Platform::setCurrentDirectory( Platform::getCurrentDirectory() );
+> 	  Torque::FS::Unmount( "game" );
+>       Torque::FS::Mount( "game", Platform::FS::createNativeFS( ( const char* ) Platform::getCurrentDirectory() ) );
+>    }else{
+>       // if launched from Torque Toolbox or the executable wrapper for the DLL
+>       Platform::setCurrentDirectory( Platform::getMainDotCsDir() );
+>    }
+Only in ../../../engine/source/app: mainLoop.h
+Only in ../../../engine/source/app: net
+Only in ../../../engine/source/app: version.cpp
+Only in ../../../engine/source/app: version.h
+Only in .: changes_diff.txt
+Only in ../../../engine/source: cinterface
+Only in ../../../engine/source: collision
+Only in ../../../engine/source: component
+Only in ../../../engine/source/console: CMDgram.y
+Only in ../../../engine/source/console: CMDscan.cpp
+Only in ../../../engine/source/console: CMDscan.l
+Only in ../../../engine/source/console: ICallMethod.h
+Only in ../../../engine/source/console: SimXMLDocument.cpp
+Only in ../../../engine/source/console: SimXMLDocument.h
+Only in ../../../engine/source/console: arrayObject.cpp
+Only in ../../../engine/source/console: arrayObject.h
+Only in ../../../engine/source/console: ast.h
+Only in ../../../engine/source/console: astAlloc.cpp
+Only in ../../../engine/source/console: astNodes.cpp
+Only in ../../../engine/source/console: bison.bat
+Only in ../../../engine/source/console: bison.simple
+Only in ../../../engine/source/console: cmdgram.cpp
+Only in ../../../engine/source/console: cmdgram.h
+Only in ../../../engine/source/console: codeBlock.cpp
+Only in ../../../engine/source/console: codeBlock.h
+diff -r -d ../../../engine/source/console/compiledEval.cpp ./console/compiledEval.cpp
+1297c1297
+<             if(curObject)
+---
+> 			if(curObject)
+1726a1727,1737
+>                         break;
+>                      }
+> 					 // scriptT3D
+> 					 case Namespace::Entry::extScriptCallbackType:
+>                      {
+> 						const char *ret = nsEntry->cb.mScriptStringCallbackFunc(gEvalState.thisObject, nsEntry->mNamespace, callArgc, callArgv);
+>                         STR.popFrame();
+>                         if(ret != STR.getStringValue())
+>                            STR.setStringValue(ret);
+>                         else
+>                            STR.setLen(dStrlen(ret));
+Only in ../../../engine/source/console: compiler.cpp
+Only in ../../../engine/source/console: compiler.h
+Only in ../../../engine/source/console: console.cpp
+diff -r -d ../../../engine/source/console/console.h ./console/console.h
+5d4
+< 
+119a119,121
+> 
+> // scriptT3D
+> typedef const char * (*ScriptStringCallback)(SimObject *obj, Namespace *nsObj, S32 argc, const char *argv[]);
+Only in ../../../engine/source/console: consoleDoc.cpp
+Only in ../../../engine/source/console: consoleDoc.h
+Only in ../../../engine/source/console: consoleFunctions.cpp
+diff -r -d ../../../engine/source/console/consoleInternal.cpp ./console/consoleInternal.cpp
+1227a1228,1243
+> // scriptT3D
+> void Namespace::addScriptCommand( StringTableEntry name, ScriptStringCallback cb, const char *usage, S32 minArgs, S32 maxArgs, bool isToolOnly, ConsoleFunctionHeader* header )
+> {
+>    Entry *ent = createLocalEntry(name);
+>    trashCache();
+> 
+>    ent->mUsage = usage;
+>    ent->mHeader = header;
+>    ent->mMinArgs = minArgs;
+>    ent->mMaxArgs = maxArgs;
+>    ent->mToolOnly = isToolOnly;
+> 
+>    ent->mType = Entry::extScriptCallbackType;
+>    ent->cb.mScriptStringCallbackFunc = cb;
+> }
+> 
+1300a1317,1319
+> 	  // scriptT3D
+>       case extScriptCallbackType:
+> 		 return cb.mScriptStringCallbackFunc(state->thisObject, this->mNamespace, argc, argv);
+diff -r -d ../../../engine/source/console/consoleInternal.h ./console/consoleInternal.h
+35d34
+< 
+77c76,78
+<             BoolCallbackType
+---
+>             BoolCallbackType,
+> 			// scriptT3D
+> 			extScriptCallbackType
+126a128,129
+> 			// scriptT3D
+> 			ScriptStringCallback mScriptStringCallbackFunc;
+171a175,177
+> 
+> 	  // scriptT3D
+> 	  void addScriptCommand( StringTableEntry name, ScriptStringCallback, const char *usage, S32 minArgs, S32 maxArgs, bool toolOnly = false, ConsoleFunctionHeader* header = NULL );
+Only in ../../../engine/source/console: consoleLogger.cpp
+Only in ../../../engine/source/console: consoleLogger.h
+Only in ../../../engine/source/console: consoleObject.cpp
+Only in ../../../engine/source/console: consoleObject.h
+Only in ../../../engine/source/console: consoleParser.cpp
+Only in ../../../engine/source/console: consoleParser.h
+Only in ../../../engine/source/console: consoleTypes.cpp
+Only in ../../../engine/source/console: consoleTypes.h
+Only in ../../../engine/source/console: consoleXMLExport.cpp
+Only in ../../../engine/source/console: consoleXMLExport.h
+Only in ../../../engine/source/console: debugOutputConsumer.cpp
+Only in ../../../engine/source/console: debugOutputConsumer.h
+Only in ../../../engine/source/console: dynamicTypes.cpp
+Only in ../../../engine/source/console: dynamicTypes.h
+Only in ../../../engine/source/console: engineAPI.h
+Only in ../../../engine/source/console: engineDoc.cpp
+Only in ../../../engine/source/console: engineExports.cpp
+Only in ../../../engine/source/console: engineExports.h
+Only in ../../../engine/source/console: engineFunctions.cpp
+Only in ../../../engine/source/console: engineFunctions.h
+Only in ../../../engine/source/console: engineObject.cpp
+Only in ../../../engine/source/console: engineObject.h
+Only in ../../../engine/source/console: enginePrimitives.cpp
+Only in ../../../engine/source/console: enginePrimitives.h
+Only in ../../../engine/source/console: engineStructs.cpp
+Only in ../../../engine/source/console: engineStructs.h
+Only in ../../../engine/source/console: engineTypeInfo.cpp
+Only in ../../../engine/source/console: engineTypeInfo.h
+Only in ../../../engine/source/console: engineTypes.cpp
+Only in ../../../engine/source/console: engineTypes.h
+Only in ../../../engine/source/console: engineXMLExport.cpp
+Only in ../../../engine/source/console: fieldBrushObject.cpp
+Only in ../../../engine/source/console: fieldBrushObject.h
+Only in ../../../engine/source/console: fileSystemFunctions.cpp
+Only in ../../../engine/source/console: generateCompiler.bat
+Only in ../../../engine/source/console: persistenceManager.cpp
+Only in ../../../engine/source/console: persistenceManager.h
+Only in ../../../engine/source/console: propertyParsing.cpp
+Only in ../../../engine/source/console: propertyParsing.h
+Only in ../../../engine/source/console: runtimeClassRep.cpp
+Only in ../../../engine/source/console: runtimeClassRep.h
+Only in ../../../engine/source/console: scriptFilename.cpp
+Only in ../../../engine/source/console: scriptFilename.h
+Only in ../../../engine/source/console: scriptObjects.cpp
+diff -r -d ../../../engine/source/console/scriptObjects.h ./console/scriptObjects.h
+23c23,24
+<    bool onAdd();
+---
+>    // scriptT3D : made virtual
+>    virtual bool onAdd();
+Only in ../../../engine/source/console: sim.cpp
+Only in ../../../engine/source/console: sim.h
+Only in ../../../engine/source/console: simBase.h
+Only in ../../../engine/source/console: simDatablock.cpp
+Only in ../../../engine/source/console: simDatablock.h
+Only in ../../../engine/source/console: simDictionary.cpp
+Only in ../../../engine/source/console: simDictionary.h
+Only in ../../../engine/source/console: simEvents.cpp
+Only in ../../../engine/source/console: simEvents.h
+Only in ../../../engine/source/console: simFieldDictionary.cpp
+Only in ../../../engine/source/console: simFieldDictionary.h
+Only in ../../../engine/source/console: simManager.cpp
+Only in ../../../engine/source/console: simObject.cpp
+diff -r -d ../../../engine/source/console/simObject.h ./console/simObject.h
+435c435,436
+<       const char *getDataField(StringTableEntry slotName, const char *array);
+---
+> 	  // scriptT3D added virtual
+>       virtual const char *getDataField(StringTableEntry slotName, const char *array);
+445c446,447
+<       void setDataField(StringTableEntry slotName, const char *array, const char *value);
+---
+> 	  // scriptT3D added virtual
+>       virtual void setDataField(StringTableEntry slotName, const char *array, const char *value);
+Only in ../../../engine/source/console: simObjectList.cpp
+Only in ../../../engine/source/console: simObjectList.h
+Only in ../../../engine/source/console: simObjectMemento.cpp
+Only in ../../../engine/source/console: simObjectMemento.h
+Only in ../../../engine/source/console: simObjectRef.h
+Only in ../../../engine/source/console: simPersistID.cpp
+Only in ../../../engine/source/console: simPersistID.h
+Only in ../../../engine/source/console: simPersistSet.cpp
+Only in ../../../engine/source/console: simPersistSet.h
+Only in ../../../engine/source/console: simSerialize.cpp
+Only in ../../../engine/source/console: simSet.cpp
+Only in ../../../engine/source/console: simSet.h
+Only in ../../../engine/source/console: stringStack.cpp
+Only in ../../../engine/source/console: stringStack.h
+Only in ../../../engine/source/console: telnetConsole.cpp
+Only in ../../../engine/source/console: telnetConsole.h
+Only in ../../../engine/source/console: telnetDebugger.cpp
+Only in ../../../engine/source/console: telnetDebugger.h
+Only in ../../../engine/source/console: typeValidators.cpp
+Only in ../../../engine/source/console: typeValidators.h
+Only in ../../../engine/source: core
+Only in ../../../engine/source: environment
+Only in ../../../engine/source: forest
+Only in .: get_diff.bat
+Only in ../../../engine/source: gfx
+Only in ../../../engine/source: ggEndOfLineFix.txt
+Only in ../../../engine/source: gui
+Only in ../../../engine/source: i18n
+Only in ../../../engine/source: interior
+Only in ../../../engine/source: lighting
+diff -r -d ../../../engine/source/main/main.cpp ./main/main.cpp
+25c25,26
+<    sprintf(gameLib, "%s.dll", filename);
+---
+>    //sprintf(gameLib, "%s.dll", filename);
+>    sprintf(gameLib, "_scriptT3D.pyd", filename);
+Only in ../../../engine/source: materials
+Only in ../../../engine/source: math
+Only in ../../../engine/source: platform
+Only in ../../../engine/source: platformMac
+Only in ../../../engine/source: platformPOSIX
+Only in ../../../engine/source: platformWin32
+Only in ../../../engine/source: platformX86UNIX
+Only in ../../../engine/source: postFx
+Only in .: pyT3D.i
+Only in ../../../engine/source: renderInstance
+Only in ../../../engine/source: scene
+Only in .: scriptT3D.cpp
+Only in .: scriptT3D.h
+Only in .: scriptT3D.i
+Only in .: scriptT3D.py
+Only in .: scriptT3D_wrap.cxx
+Only in ../../../engine/source: sfx
+Only in ../../../engine/source: shaderGen
+Only in ../../../engine/source: sim
+Only in ../../../engine/source: terrain
+Only in .: torqueConfig.h
+Only in ../../../engine/source: ts
+Only in ../../../engine/source: unit
+Only in ../../../engine/source: util
+Only in ../../../engine/source: windowManager

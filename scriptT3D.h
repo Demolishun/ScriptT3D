@@ -211,9 +211,11 @@ public:
 		//return torque_evaluate(code);
 		return Con::evaluate(code);
 	}
+	/*
 	const char* Execute(S32 argc, const char** argv){
 		return Con::execute(argc, argv);
 	}
+	*/
 	const char* Execute(const char* simobj, S32 argc, const char** argv){
 		SimObject *tsim;
 

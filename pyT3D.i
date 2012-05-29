@@ -920,6 +920,37 @@ public:
 	bool ExecuteFailed();
 	
 	%pythoncode %{
+	class gAccess(object):
+		def __init__(self, sim):
+			# using superclass prevents recursion
+			object.__setattr__(self, 'sim', sim)
+
+		def __setattr__(self, attribute, value):		
+			self.sim.SetVariable(attribute, value)
+
+		def __getattr__(self, attribute):
+			return self.sim.GetVariable(attribute)
+
+	class oAccess(object):
+		def __init__(self, sim):
+			# using superclass prevents recursion
+			object.__setattr__(self, 'sim', sim)
+
+		def __setattr__(self, attribute, value):		
+			raise AttributeError("Cannot create a SimObject this way: Sim().o.{0}={1}\nUse Sim().spawnObject() instead".format(str(attribute),str(value)))
+
+		def __getattr__(self, attribute):
+			print attribute
+			sobj = self.sim.FindObject(attribute)
+			print sobj
+			if(sobj is None):
+				raise AttributeError("SimObject not found:",attribute)
+			return sobj
+
+	# place holders for oAccess and gAccess
+	o = None
+	g = None
+			
 	# redefine for accessing Sim based objects, variables and functions
 	# save original function
 	__setattr_org__ = __setattr__
@@ -927,40 +958,51 @@ public:
 		if attribute in swig_RestrictedAttributes:
 			self.__setattr_org__(attribute, value)
 			return
+		
+		# could do automagic export of functions here
+
+		"""
 		try:
 			self.__setitem__(attribute, value)
 			return
 		except KeyError,e:
 			raise AttributeError(attribute)
+		"""
 	# save original function
 	__getattr_org__ = __getattr__
 	def __getattr__(self, attribute):
 		if attribute in swig_RestrictedAttributes:
 			return self.__getattr_org__(attribute)
+		
 		try:
 			return self.__getitem__(attribute)
 		except KeyError,e:
 			raise AttributeError(attribute)
 		
 	# dictionary style access to Sim based objects, variables and functions
-	def __setitem__(self, key, value):		
+	def __setitem__(self, key, value):
+		pass
+		"""
 		setattr = self.SetVariable(key, value)
 		if setattr:
 			return
 			
 		raise KeyError(key,"is not a valid console variable.")
+		"""
 	
 	def __getitem__(self, key):
 		key = str(key)
 		
 		# find attribute in console if possible
+		"""
 		sobj = self.FindObject(key)
 		if sobj is not None:
 			return sobj
 		svar = self.GetVariable(key)
 		if len(svar):
 			return svar
-		
+		"""
+
 		splitval = None
 		if "::" in key:
 			fname = key.split("::")
@@ -1013,3 +1055,22 @@ public:
 
 	%}	
 };
+
+%extend SimSpace {
+	%pythoncode %{
+
+	def init_override(func):
+		def wrapper(self):
+			# call original init function
+			func(self)
+
+			# create instances of gAccess and oAccess
+			#self.g = self.gAccess(self)
+			object.__setattr__(self, 'g', self.gAccess(self))
+			#self.o = self.oAccess(self)
+			object.__setattr__(self, 'o', self.oAccess(self))
+		return wrapper
+	# SUPER HACK, this is dependent upon how SWIG generates the __init__ function
+	@init_override
+	%}
+}

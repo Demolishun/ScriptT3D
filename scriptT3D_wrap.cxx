@@ -3515,6 +3515,7 @@ static PyObject * ExportCallback(PyObject *self, PyObject *pyargs){
 	//if (!PyArg_ParseTuple(pyargs, "OssII|zb", &pyfunc, &name, &usage, &minargs, &maxargs, &ns, &override))
 	// %native method does not support kwargs in a simple way
 	//if (!PyArg_ParseTupleAndKeywords(pyargs, keywds, "Os|szb", kwlist, &pyfunc, &name, &usage, &ns, &overrides))
+	// Note: ns (namespace) is now before usage.
 	if (!PyArg_ParseTuple(pyargs, "Os|zzb", &pyfunc, &name, &ns, &usage, &overrides)) {
         return NULL;
 	}

@@ -3,7 +3,7 @@
 // Copyright Demolishun Consulting (Frank Carney) 2012
 //-----------------------------------------------------------------------------
 
-#include "scriptT3D.h"
+#include "scriptT3Dsimple.h"
 #include "console/engineAPI.h"
 
 // getting the TS equivalent of a SimObject
@@ -67,15 +67,14 @@ namespace Con
 	}
 };
 
+/*
 // new script objects
 IMPLEMENT_CONOBJECT(extScriptObject);
 
 // ext script object
 extScriptObject::extScriptObject()
-{
-	/* 
-	Without external script object reference this object will just be a normal ScriptObject.
-	*/
+{	
+	// Without external script object reference this object will just be a normal ScriptObject.	
 	mObject = NULL;
 }
 // clean up
@@ -140,3 +139,4 @@ void extScriptObject::setDataField(StringTableEntry slotName, const char *array,
 	}
 }
 
+*/

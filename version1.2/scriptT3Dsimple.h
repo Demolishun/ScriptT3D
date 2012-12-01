@@ -6,6 +6,7 @@
 #include "platform/platform.h"
 #include "console/compiler.h"
 #include "console/consoleInternal.h"
+#include "console/stringStack.h"
 #include "core/util/tDictionary.h"
 #include "core/strings/stringFunctions.h"
 #include "app/mainLoop.h"
@@ -102,146 +103,13 @@ extern "C" {
 	void script_export_callback_string(StringCallback cb, const char *nameSpace, const char *funcName, const char* usage,  S32 minArgs, S32 maxArgs);
 }
 
-// sim
-class SimSpace {
-private:
-	S32 convSimObjectID(const char* param){
-		S32 tid;
-
-		if(!param || !dStrlen(param))
-			return 0;
-
-		tid = dAtoi(param);
-		if(tid > 0)
-			return tid;
-
-		return 0;
-	}
-	SimObject* getSimObject(const char* param){
-		SimObject *tsim;
-		S32 tid;
-
-		if(!param || !dStrlen(param))
-			return NULL;
-
-		// check for id lookup
-		tid = convSimObjectID(param);
-		if(tid){
-			//tsim = Sim_FindObjectById(tid);
-			tsim = Sim::findObject(tid);
-			return tsim;
-		}
-
-		// check for name based lookup
-		//tsim = Sim_FindObjectByString(param);
-		tsim = Sim::findObject(param);
-
-		return tsim;
-	}
-
-	bool executeFailed;
-
-public:
-	// singleton
-	// bad problems, don't try this for now
-	/*
-	static SimSpace& getInstance()
-	{
-		static SimSpace instance;	// Guaranteed to be destroyed.
-									// Instantiated on first use.
-
-		return instance;
-	}
-	*/
-
-	SimSpace(){
-		executeFailed = false;
-	};
-	
-public:
-	SimObject* FindObject(S32 param){
-		if(param <= 0)
-			return NULL;
-		//return Sim_FindObjectById(param);
-		return Sim::findObject(param);
-	}
-	SimObject* FindObject(const char* param){
-		if(!param || !dStrlen(param))
-			return NULL;
-		return getSimObject(param);
-	}
-	const char* GetVariable(const char* name){
-		if(!name || !dStrlen(name))
-			return NULL;
-		//return torque_getvariable(name);
-		return Con::getVariable(StringTable->insert(name));
-	}
-	bool SetVariable(const char* name, const char* value){
-		if(!name || !dStrlen(name))
-			return false;
-		torque_setvariable(name, value);
-		const char* tvalue = GetVariable(name);
-		if(dStrcmp(value,tvalue) == 0)
-			return true;
-		else
-			return false;
-	}
-	bool IsFunction(const char* nameSpace, const char* name){
-		const char *ns = nameSpace;
-		SimObject *tsim;
-
-		// check for sim id
-		if(nameSpace && dStrlen(nameSpace)){
-			//Con::printf("%s",nameSpace);
-			if(convSimObjectID(nameSpace)){
-				//Con::printf("%s",nameSpace);
-				tsim = getSimObject(nameSpace);
-				if(!tsim)
-					return false;
-				ns = tsim->getClassName();
-			}
-		}
-
-		if(script_get_namespace_entry(ns, name) != NULL)
-			return true;
-
-		return false;
-	}
-	const char* Evaluate(const char* code){
-		//return torque_evaluate(code);
-		return Con::evaluate(code);
-	}
-	/*
-	const char* Execute(S32 argc, const char** argv){
-		return Con::execute(argc, argv);
-	}
-	*/
-	const char* Execute(const char* simobj, S32 argc, const char** argv){
-		SimObject *tsim;
-
-		executeFailed = false;
-		
-		if(simobj && dStrlen(simobj)){
-			tsim = getSimObject(simobj);
-			if(!tsim){
-				executeFailed = true;
-				return NULL;
-			}
-			return Con::execute(tsim, argc, argv);
-		} 
-			
-		return Con::execute(argc, argv);
-	}
-	bool ExecuteFailed(){
-		return executeFailed;
-	}		
-};
-
 // getting the TS equivalent of a SimObject
 const char* getSimObjectScript(SimObject *obj);
 
+// lookup for exported console functions
 static HashTable<Namespace::Entry*,void*> gScriptCallbackLookup;
 
+// util functions
 bool isValidIdentifier(const char *name);
 bool isNotNullNotEmptyCString(const char *teststr);
 
@@ -250,13 +118,7 @@ namespace Con
 {
 	// function for adding external script commands
 	void addScriptCommand( const char *nameSpace, const char* name, ScriptStringCallback cb, const char* usage, S32 minArgs, S32 maxArgs, bool toolOnly = false, ConsoleFunctionHeader* header = NULL );
-
 };
-
-// storage for function object pointers
-
-// ref
-class extScriptObject;
 
 // baseclass for callback object
 class extCallBackObject
@@ -276,7 +138,7 @@ public:
 	// lookup
 	virtual bool hasMethod(const char *name)=0;
 	// export
-	virtual void exportFunctions(extScriptObject *extsobject)=0;
+	//virtual void exportFunctions(extScriptObject *extsobject)=0;
 
 	// attribute functions
 	virtual bool hasAttribute(const char *name)=0;
@@ -285,30 +147,6 @@ public:
 	virtual void setAttribute(const char *name, const char *value)=0;
 	virtual void setAttribute(const char *name, const char *index, const char *value)=0;
 };
-
-// add new sim object type for ext script objects
-class extScriptObject : public ScriptObject
-{
-   typedef ScriptObject Parent;
-
-private:
-	extCallBackObject *mObject;  // pointer to hold ref to object	
-
-public:
-   extScriptObject();
-   ~extScriptObject();
-   
-   DECLARE_CONOBJECT(extScriptObject);
-
-   // object functions
-   void SetObject(extCallBackObject *obj);
-   extCallBackObject* GetObject(){return(mObject);}
-
-   // attribute functions
-   const char *getDataField(StringTableEntry slotName, const char *array);
-   void setDataField(StringTableEntry slotName, const char *array, const char *value);
-};
-
 
 // End of file.
 #endif

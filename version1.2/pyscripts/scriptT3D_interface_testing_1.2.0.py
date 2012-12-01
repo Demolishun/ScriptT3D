@@ -25,6 +25,170 @@
 #
 
 import sys
+import sched, time
+import scriptT3D
+
+from colorama import Fore as cr_Fore, Back as cr_Back, Style as cr_Style
+from colorama import init as cr_init, AnsiToWin32 as cr_AnsiToWin32
+#cr_init(wrap=False) # only for problems
+#cr_stream = cr_AnsiToWin32(sys.stderr).stream # only for problems
+cr_init(autoreset=True)  # resets color changes at end of statement
+
+s = sched.scheduler(time.time, time.sleep)
+
+engine = scriptT3D
+
+print dir(engine)
+#print dir(engine.Con)
+Con = engine.Con
+Globals = engine.Globals
+SimObjects = engine.SimObjects
+
+#sys.exit(0)
+
+if not engine.init(len(sys.argv),sys.argv):
+    sys.exit(1)
+
+#execName = Con.getExecutableName()
+#print "Starting up {0}...".format(execName)
+
+# messages of console are colored here
+# change to your hearts desire
+def consoleConsumerCallback(level, data):
+    if level == 0:
+        print "{0}{1}{2}".format(cr_Fore.BLUE, cr_Style.BRIGHT, data)
+    elif level == 1:
+        print "{0}{1}{2}".format(cr_Fore.CYAN, cr_Style.BRIGHT, data)
+    elif level == 2:
+        print "{0}{1}{2}".format(cr_Fore.RED, cr_Style.BRIGHT, data)
+
+engine.ExportConsumer(consoleConsumerCallback)
+
+csfile = "main_hook.cs"
+#print "Executing {0}...",format(csfile)
+#print Con.Exec
+#Con.Exec(csfile)  # for some reason Python does not like some objects having an "exec" method
+# Con.exec()   # uncomment this line to see what I am talking about
+print dir(engine)
+
+#("{0}".format(csfile))
+
+def testfunction():
+    try:
+        #Con.test()
+        engine.evaluate('function test(){echo("test code");}')
+        Con.test()
+        engine.evaluate('function test2(){echo("new test2 code");}')
+        engine.evaluate('function test(){echo("new test code");}')
+        Con.test2()
+        Con.test()
+
+        engine.evaluate('$Global1 = "test global1";');
+        print "Global1 data:",Globals.Global1
+        Globals.Global2 = "test global2"
+        print "Global2 data:",Globals.Global2
+
+        print engine.getSimObject("MyTestObject")
+        evalString = \
+        """
+        %obj = new SimObject(MyTestObject){
+            attrib1 = "attrib1";
+        };
+        %obj.attrib2[0] = "array1 val0";
+        %obj.attrib2[1] = "array1 val1";
+        return %obj;
+        """
+        objid = int(engine.evaluate(evalString))
+        print objid
+
+        # for some reason printing a reference to a simobject will crash, so wrap it in str()
+        print str(engine.getSimObject("MyTestObject"))
+        print str(engine.getSimObject(objid))
+        print dir(engine.getSimObject(objid))
+        print engine.getSimObjectScript(engine.getSimObject(objid))
+
+
+        print "Printing Object:", SimObjects.MyTestObject
+
+        print "by ID", SimObjects[objid]  # can be int or string that translates to name or int
+        try:
+            print "by bad ID", SimObjects[objid+100]
+        except KeyError, e:
+            print type(e), e.message
+
+
+        obj = SimObjects.MyTestObject
+        print obj
+        obj.dump()
+        print obj.getName()
+        print obj.getClassName()
+
+        print obj.canSave
+        #obj.testvalue = 14 # doesn't like non string types
+        obj.testvalue = "14"
+        print obj.testvalue
+
+        # testing attribute access
+        print obj.attrib1
+        print obj.attrib20
+        print obj.attrib21
+        obj.attrib3[0] = "hello"
+        print "getting value 0 from array attribute:", obj.attrib3[0]
+        print "getting value 1 from array attribute:", obj.attrib3[1]
+
+        try:
+            print obj.attrib3
+        except Exception, e:
+            print type(e), e.message
+            print "cannot access attrib3 as attribute"
+
+        try:
+            print "access 1"
+            obj.attrib3
+            print "access 2"
+            data = obj.attrib3
+            print repr(data)
+            print data
+        except Exception, e:
+            print type(e), e.message
+            print "cannot access object at all?"
+
+        print engine.getSimObjectScript(engine.getSimObject(objid))
+
+        SimObjects.MyTestObject.delete()
+        #obj.dump()
+        #print obj.simobject
+        #obj.hello()
+        """
+        """
+
+        # example out messages to show coloring of console output
+        print
+        print
+        print "Regular Python print output."
+        Con.eval('echo("Normal message coloring.");')
+        Con.eval('warn("Warning message coloring!");')
+        Con.eval('error("!!!Error message coloring!!!");')
+        print
+        print
+
+    except Exception, e:
+        print type(e), e.message
+        engine.shutdown()
+        exit(1)
+
+s.enter(0, 1, testfunction, ())
+
+while engine.tick():
+    s.run()
+
+engine.shutdown()
+
+# quit before other stuff
+sys.exit(0)
+
+
+import sys
 import scriptT3D
 import sched, time
 import Queue
@@ -42,6 +206,8 @@ engine = scriptT3D
 #   Not a big deal, but just to help you be aware of that.  I had issues trying
 #   to create a singleton.
 console = engine.Sim()
+conObjects = console.o
+conGlobals = console.g
 
 # put everything in a giant exception check for testing
 #   Not recommended for normal functioning.
@@ -97,11 +263,9 @@ try:
     print console.Execute("",len(arglist),arglist)
 
     # messing with global data
-    console["$global_variable"] = "Some Data"
-    print console.global_variable
-    console.another_global = "Some more data..."
-    print console["another_global"] # it is missing the $ in front, that is because the T3D function this calls assumes it is global
-    print console["$another_global"] # just to show they match
+    console.g.global_variable = "Some Data"
+    print console.g.global_variable
+    console.g.another_global = "Some more data..."
 
     # creating a SimObject and get the id as a string
     #   It is best to let T3D create its own objects.  Hence the use of the evaluate function
@@ -111,14 +275,12 @@ try:
     psimobj = console.FindObject(simobj)
     # now print out attrib1
     print psimobj.attrib1
-    # another way to get it as just providing the id or name of the SimObject will return the object, then you can get to the attrib1 value
-    print console[simobj].attrib1
     # another way, if you know the object name or if you have the number, problem is you cannot put the number in from a variable easily
-    print console.UniqueObjectName.attrib1
+    print console.o.UniqueObjectName.attrib1
     # can set it this way too
-    console.UniqueObjectName.attrib1 = "some other value"
+    console.o.UniqueObjectName.attrib1 = "some other value"
     # make more attributes
-    console.UniqueObjectName.attrib2 = "can also make new attributes"
+    console.o.UniqueObjectName.attrib2 = "can also make new attributes"
     # get the object Torque Script equivalent
     #   Can be a way to save object states to a database...
     print repr(psimobj)
@@ -214,6 +376,8 @@ try:
     #   any better than T3D, it is I just wanted to have the capability.  There are other
     #   GUI systems that might make sense to use with T3D.
     hwnd = engine.gethwnd()
+
+    #console.Evaluate("""py{0!s}.dump();""".format(qobj.getID()))
 
     # run the main loop
     while engine.tick():

@@ -1,0 +1,14 @@
+The install for this version of ScriptT3D is somewhat simplified.  Now that T3D is MIT licensed I can just
+distribute the source files and not worry about doing a diff.  If you have a highly modified version of T3D
+you might want to diff to make sure you do not lose changes you have made.
+
+The engine C++ source files are in the app, console, and main directories.  These are files from the engine
+that have been changed to make the function calling of console functions work.  There are also changes for
+running under the Python exe, and finding the right DLL at startup.
+
+The instructions on the resource page at Garage Games should cover the nitty gritty of installing and using
+this module.
+
+There is some small amount of example code in the pyscripts directory.  There are also some unit tests.  It
+is highly recommended you run the unit tests to make sure code compiled correctly and everything is working
+the way it should.  That is one of the reasons for creating the unit tests.

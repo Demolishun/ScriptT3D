@@ -54,3 +54,6 @@ What do I want from the end user?
 problems, but it is not a requirement.  I fully understand that many commercial entities cannot
 do this.  That is why this is using the MIT license.  
 - If I helped make your life better then I am successful.
+
+Contact:
+If you need help or want me to do consulting/programming work contact me at me@demolishun.com.

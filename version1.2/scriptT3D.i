@@ -293,9 +293,11 @@ bool isSimObjectAttribute(SimObject *object, const char* attribname, bool includ
 bool isSimObjectMethod(SimObject *object, const char* funcname){
    return object->isMethod(funcname);
 }
+/*
 U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL){
    return object->getDataFieldType(StringTable->insert(attribName), index);   
 }
+*/
 // get and set globals variables
 const char *getVariable(const char *name){
    bool success = false;
@@ -325,7 +327,7 @@ const char *getSimObjectAttribute(SimObject *object, const char *attribName, con
 void setSimObjectAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL);
 bool isSimObjectAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true);
 bool isSimObjectMethod(SimObject *object, const char* funcname);
-U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL);
+//U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL);
 const char *getVariable(const char *name);
 void setVariable(const char *name, const char *value);
 

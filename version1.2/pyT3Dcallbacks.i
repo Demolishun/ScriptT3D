@@ -387,6 +387,19 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
    //	PyGILState_Release(gstate);
    //	return "";
    //}
+
+   // get type of object print to console
+   /*
+   PyObject *tmpType = PyObject_Type((PyObject *)tmpSBObject->getObject());  
+   char * tmpTypeString = PyString_AsString(PyObject_Str(tmpType));
+   PyErr_Clear();
+   Con::warnf("Checking type of function.");
+   if(tmpTypeString){      
+      Con::warnf("Printing type string of function object: %s",tmpTypeString);
+   }else{
+      Con::errorf("Could not print type string of function object.");
+   }
+   */
    
    // create parameter list
    if(obj)
@@ -406,10 +419,14 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
       // api is different when builtin is enabled
       // SWIG_InternalNewPointerObj is identical to SWIG_NewPointerObj when builtin is off 
       //pyobj = SWIG_NewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 |  0 );
-      pyobj = SWIG_InternalNewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 );
-      
-      if(pyobj){
-         PyObject_SetAttrString((PyObject *)tmpSBObject->getObject(),attrname,pyobj);	
+      pyobj = SWIG_InternalNewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 );      
+
+      if(pyobj){   
+         if(PyMethod_Check((PyObject *)tmpSBObject->getObject())){
+            PyObject_SetAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname,pyobj);
+         }else{
+            PyObject_SetAttrString((PyObject *)tmpSBObject->getObject(),attrname,pyobj);	
+         }
       }
    }
    // populate arguments
@@ -456,11 +473,17 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
          retstr = Con::getReturnBuffer(PyString_AsString(resconv));
       }
    }
-   // remove SimObject_this from function object
+   // remove __SimObject__ from function object
    if(obj && pyobj){
-      if(PyObject_HasAttrString((PyObject *)tmpSBObject->getObject(),attrname)){
-         PyObject_DelAttrString((PyObject *)tmpSBObject->getObject(),attrname);
-      }
+      if(PyMethod_Check((PyObject *)tmpSBObject->getObject())){         
+         if(PyObject_HasAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname)){
+            PyObject_DelAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname);
+         }
+      }else{
+         if(PyObject_HasAttrString((PyObject *)tmpSBObject->getObject(),attrname)){
+            PyObject_DelAttrString((PyObject *)tmpSBObject->getObject(),attrname);
+         }
+      }      
    }
    
    // release refs

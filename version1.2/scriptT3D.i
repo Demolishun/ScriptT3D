@@ -281,23 +281,23 @@ bool isFunction(const char* nameSpace, const char* name){
 	return false;
 }
 // get and set attributes on SimObjects
-const char *SimObjectGetAttribute(SimObject *object, const char *attribName, const char *index=NULL){
+const char *getSimObjectAttribute(SimObject *object, const char *attribName, const char *index=NULL){
    return object->getDataField(StringTable->insert(attribName), index);
 }
-void SimObjectSetAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL){
+void setSimObjectAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL){
    object->setDataField(StringTable->insert(attribName), index, value);
 }
-bool SimObjectIsAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true){
+bool isSimObjectAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true){
    return object->isField(attribname, includeStatic, includeDynamic);
 }
-bool SimObjectIsMethod(SimObject *object, const char* funcname){
+bool isSimObjectMethod(SimObject *object, const char* funcname){
    return object->isMethod(funcname);
 }
-U32 SimObjectGetDataFieldType(SimObject *object, const char* attribName, const char* index=NULL){
+U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL){
    return object->getDataFieldType(StringTable->insert(attribName), index);   
 }
 // get and set globals variables
-const char *GetVariable(const char *name){
+const char *getVariable(const char *name){
    bool success = false;
    //name = prependDollar(name);
    const char *result = gEvalState.globalVars.getVariable(StringTable->insert(name), &success);
@@ -307,7 +307,7 @@ const char *GetVariable(const char *name){
 
    return result;
 }
-void SetVariable(const char *name, const char *value){
+void setVariable(const char *name, const char *value){
    torque_setvariable(name, value);
 }
 %}
@@ -321,13 +321,13 @@ public:
 SimObject* getSimObject(const char* objectname);
 SimObject* getSimObject(int objectid);
 bool isFunction(const char* nameSpace, const char* name);
-const char *SimObjectGetAttribute(SimObject *object, const char *attribName, const char *index=NULL);
-void SimObjectSetAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL);
-bool SimObjectIsAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true);
-bool SimObjectIsMethod(SimObject *object, const char* funcname);
-U32 SimObjectGetDataFieldType(SimObject *object, const char* attribName, const char* index=NULL);
-const char *GetVariable(const char *name);
-void SetVariable(const char *name, const char *value);
+const char *getSimObjectAttribute(SimObject *object, const char *attribName, const char *index=NULL);
+void setSimObjectAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL);
+bool isSimObjectAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true);
+bool isSimObjectMethod(SimObject *object, const char* funcname);
+U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL);
+const char *getVariable(const char *name);
+void setVariable(const char *name, const char *value);
 
 // getting the TS equivalent of a SimObject
 const char* getSimObjectScript(SimObject *obj);

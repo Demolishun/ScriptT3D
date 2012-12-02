@@ -122,7 +122,7 @@ def makeFunctionCallerLambda(name, sobj=None, noself=True):
 class __Con(object):
    def __init__(self):
       self.Exec = makeFunctionCallerLambda("exec")
-   # Hack to force this attribute to be name "Exec".  Python does not like this object to have an attribute names "exec".
+   # Hack to force this attribute to be name "Exec".  Python does not like objects to have an attribute named "exec".
    #Exec = makeFunctionCallerLambda("exec", noself=False)
    def __getattr__(self, name):
       # lookup function and return callable object
@@ -144,14 +144,14 @@ Con = __Con()
 class __Globals(object):
    def __getattr__(self, name):
       # lookup global variable and return the value            
-      result = GetVariable("${0}".format(name))
+      result = getVariable("${0}".format(name))
       if result is None:
          raise AttributeError("Globals.{0} invalid variable attribute.".format(name))
          return
       return result
    def __setattr__(self, name, value):
       # lookup global variable and set the value 
-      SetVariable(name, str(value))
+      setVariable(name, str(value))
       return
 Globals = __Globals()
 
@@ -172,14 +172,14 @@ class _SimObjectAttribute(object):
       if sobj == None:
          raise RuntimeError("SimObject:{0} object does not exist.".format(self.simobject))
          return
-      return SimObjectGetAttribute(sobj, self.name, str(key))
+      return getSimObjectAttribute(sobj, self.name, str(key))
       
    def __setitem__(self, key, value):
       sobj = getSimObject(self.simobject)      
       if sobj == None:
          raise RuntimeError("SimObject:{0} object does not exist.".format(self.simobject))
          return
-      SimObjectSetAttribute(sobj, self.name, str(value), str(key))
+      setSimObjectAttribute(sobj, self.name, str(value), str(key))
       return
    
 class SimObject(object):   
@@ -196,16 +196,16 @@ class SimObject(object):
       if sobj == None:
          raise RuntimeError("SimObject:{0} object does not exist.".format(self.simobject))
          return
-      if SimObjectIsMethod(sobj, name):
+      if isSimObjectMethod(sobj, name):
          #fcObject = FunctionCaller(getSimObject(self.simobject), name)
          #object.__setattr__(self, name, lambda *args: fcObject.ObjectCall(len(args) or 0, map(str,args)))         
          func = makeFunctionCallerLambda(name, self.simobject)         
          object.__setattr__(self, name, func)         
          return getattr(self,name)         
       else:
-         if SimObjectIsAttribute(sobj, name):
+         if isSimObjectAttribute(sobj, name):
             #print "Object Field Type:",self.simobject,name,str(SimObjectGetDataFieldType(sobj, name))
-            return SimObjectGetAttribute(sobj, name)
+            return getSimObjectAttribute(sobj, name)
          return _SimObjectAttribute(self.simobject, name)
          #raise AttributeError("SimObject:{0}.{1} invalid attribute.".format(self.simobject,name))       
          #return
@@ -216,10 +216,10 @@ class SimObject(object):
       if sobj == None:
          raise RuntimeError("SimObject:{0} object does not exist.".format(self.simobject))
          return
-      if SimObjectIsMethod(sobj, name):
+      if isSimObjectMethod(sobj, name):
          raise AttributeError("SimObject:{0}.{1} is a function not a writeable attribute.".format(self.simobject, name))
          return
-      SimObjectSetAttribute(sobj, name, value)   
+      setSimObjectAttribute(sobj, name, str(value))   
       
 # SimObjects interface class
 class __SimObjects(object):
@@ -231,7 +231,7 @@ class __SimObjects(object):
    def __getitem__(self, index):
       objRef = getSimObject(index)
       if objRef is None:
-         raise KeyError('SimObjects: index is not a SimObject: {0:d}'.format(index))
+         raise KeyError('SimObjects: index is not a SimObject: {0}'.format(str(index)))
       return SimObject(index)   
 SimObjects = __SimObjects()
 %}

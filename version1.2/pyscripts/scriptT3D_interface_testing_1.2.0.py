@@ -4,11 +4,25 @@
 #              Mainly used for development and debugging.
 #              Can be used as a reference of how to use the scriptT3D extension.
 #
-# Author:      Frank Carney
-#
-# Created:     09/05/2012
-# Copyright:   (c) Frank Carney 2012
-# Licence:     To be used only if you are valid licensee of the T3D engine.
+"""
+Copyright (c) 2012 Frank Carney
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this
+software and associated documentation files (the "Software"), to deal in the Software
+without restriction, including without limitation the rights to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the following
+conditions:
+The above copyright notice and this permission notice shall be included in all copies
+or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+"""
 #-------------------------------------------------------------------------------
 #!/usr/bin/env python
 
@@ -18,11 +32,6 @@
 #   people to contribute to this codebase and have some say as to the direction it
 #   takes.  I have only guessed at the usage scenarios this extension will be used
 #   in.  So more input is definitely welcome.
-
-#
-#   For threading information see the scriptT3D_threaded.py file
-#   More examples will be added as time progresses.
-#
 
 import sys
 import sched, time
@@ -204,6 +213,7 @@ def testfunction():
         engine.ExportCallback(tObj.unboundCallback,"unboundCallback","SimObject")
 
         Con.eval('new SimObject(testObject);')
+
         # non class function
         Con.eval('testCallback("blah");')
         Con.eval('testObject.testCallback("blah blah");')

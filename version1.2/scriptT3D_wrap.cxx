@@ -3949,6 +3949,19 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
    //	PyGILState_Release(gstate);
    //	return "";
    //}
+
+   // get type of object print to console
+   /*
+   PyObject *tmpType = PyObject_Type((PyObject *)tmpSBObject->getObject());  
+   char * tmpTypeString = PyString_AsString(PyObject_Str(tmpType));
+   PyErr_Clear();
+   Con::warnf("Checking type of function.");
+   if(tmpTypeString){      
+      Con::warnf("Printing type string of function object: %s",tmpTypeString);
+   }else{
+      Con::errorf("Could not print type string of function object.");
+   }
+   */
    
    // create parameter list
    if(obj)
@@ -3968,10 +3981,14 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
       // api is different when builtin is enabled
       // SWIG_InternalNewPointerObj is identical to SWIG_NewPointerObj when builtin is off 
       //pyobj = SWIG_NewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 |  0 );
-      pyobj = SWIG_InternalNewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 );
-      
-      if(pyobj){
-         PyObject_SetAttrString((PyObject *)tmpSBObject->getObject(),attrname,pyobj);	
+      pyobj = SWIG_InternalNewPointerObj(SWIG_as_voidptr(obj), SWIGTYPE_p_SimObject, 0 );      
+
+      if(pyobj){   
+         if(PyMethod_Check((PyObject *)tmpSBObject->getObject())){
+            PyObject_SetAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname,pyobj);
+         }else{
+            PyObject_SetAttrString((PyObject *)tmpSBObject->getObject(),attrname,pyobj);	
+         }
       }
    }
    // populate arguments
@@ -4018,11 +4035,17 @@ static const char * pyScriptCallback(SimObject *obj, Namespace *nsObj, S32 argc,
          retstr = Con::getReturnBuffer(PyString_AsString(resconv));
       }
    }
-   // remove SimObject_this from function object
+   // remove __SimObject__ from function object
    if(obj && pyobj){
-      if(PyObject_HasAttrString((PyObject *)tmpSBObject->getObject(),attrname)){
-         PyObject_DelAttrString((PyObject *)tmpSBObject->getObject(),attrname);
-      }
+      if(PyMethod_Check((PyObject *)tmpSBObject->getObject())){         
+         if(PyObject_HasAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname)){
+            PyObject_DelAttrString(PyMethod_Function((PyObject *)tmpSBObject->getObject()),attrname);
+         }
+      }else{
+         if(PyObject_HasAttrString((PyObject *)tmpSBObject->getObject(),attrname)){
+            PyObject_DelAttrString((PyObject *)tmpSBObject->getObject(),attrname);
+         }
+      }      
    }
    
    // release refs
@@ -4548,23 +4571,25 @@ bool isFunction(const char* nameSpace, const char* name){
 	return false;
 }
 // get and set attributes on SimObjects
-const char *SimObjectGetAttribute(SimObject *object, const char *attribName, const char *index=NULL){
+const char *getSimObjectAttribute(SimObject *object, const char *attribName, const char *index=NULL){
    return object->getDataField(StringTable->insert(attribName), index);
 }
-void SimObjectSetAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL){
+void setSimObjectAttribute(SimObject *object, const char *attribName, const char *value, const char *index=NULL){
    object->setDataField(StringTable->insert(attribName), index, value);
 }
-bool SimObjectIsAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true){
+bool isSimObjectAttribute(SimObject *object, const char* attribname, bool includeStatic = true, bool includeDynamic = true){
    return object->isField(attribname, includeStatic, includeDynamic);
 }
-bool SimObjectIsMethod(SimObject *object, const char* funcname){
+bool isSimObjectMethod(SimObject *object, const char* funcname){
    return object->isMethod(funcname);
 }
-U32 SimObjectGetDataFieldType(SimObject *object, const char* attribName, const char* index=NULL){
+/*
+U32 getSimObjectDataFieldType(SimObject *object, const char* attribName, const char* index=NULL){
    return object->getDataFieldType(StringTable->insert(attribName), index);   
 }
+*/
 // get and set globals variables
-const char *GetVariable(const char *name){
+const char *getVariable(const char *name){
    bool success = false;
    //name = prependDollar(name);
    const char *result = gEvalState.globalVars.getVariable(StringTable->insert(name), &success);
@@ -4574,7 +4599,7 @@ const char *GetVariable(const char *name){
 
    return result;
 }
-void SetVariable(const char *name, const char *value){
+void setVariable(const char *name, const char *value){
    torque_setvariable(name, value);
 }
 
@@ -5285,7 +5310,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectGetAttribute__SWIG_0(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_getSimObjectAttribute__SWIG_0(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5303,25 +5328,25 @@ SWIGINTERN PyObject *_wrap_SimObjectGetAttribute__SWIG_0(PyObject *self, PyObjec
   PyObject * obj2 = 0 ;
   char *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:SimObjectGetAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:getSimObjectAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectGetAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "getSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectGetAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "getSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "SimObjectGetAttribute" "', argument " "3"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "getSimObjectAttribute" "', argument " "3"" of type '" "char const *""'");
   }
   arg3 = reinterpret_cast< char * >(buf3);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (char *)SimObjectGetAttribute(arg1,(char const *)arg2,(char const *)arg3);
+    result = (char *)getSimObjectAttribute(arg1,(char const *)arg2,(char const *)arg3);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
@@ -5335,7 +5360,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectGetAttribute__SWIG_1(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_getSimObjectAttribute__SWIG_1(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5348,20 +5373,20 @@ SWIGINTERN PyObject *_wrap_SimObjectGetAttribute__SWIG_1(PyObject *self, PyObjec
   PyObject * obj1 = 0 ;
   char *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:SimObjectGetAttribute",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO:getSimObjectAttribute",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectGetAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "getSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectGetAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "getSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (char *)SimObjectGetAttribute(arg1,(char const *)arg2);
+    result = (char *)getSimObjectAttribute(arg1,(char const *)arg2);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
@@ -5373,7 +5398,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectGetAttribute(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_getSimObjectAttribute(PyObject *self, PyObject *args) {
   int argc;
   PyObject *argv[4];
   int ii;
@@ -5392,7 +5417,7 @@ SWIGINTERN PyObject *_wrap_SimObjectGetAttribute(PyObject *self, PyObject *args)
       int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap_SimObjectGetAttribute__SWIG_1(self, args);
+        return _wrap_getSimObjectAttribute__SWIG_1(self, args);
       }
     }
   }
@@ -5408,22 +5433,22 @@ SWIGINTERN PyObject *_wrap_SimObjectGetAttribute(PyObject *self, PyObject *args)
         int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
         _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_SimObjectGetAttribute__SWIG_0(self, args);
+          return _wrap_getSimObjectAttribute__SWIG_0(self, args);
         }
       }
     }
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'SimObjectGetAttribute'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'getSimObjectAttribute'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    SimObjectGetAttribute(SimObject *,char const *,char const *)\n"
-    "    SimObjectGetAttribute(SimObject *,char const *)\n");
+    "    getSimObjectAttribute(SimObject *,char const *,char const *)\n"
+    "    getSimObjectAttribute(SimObject *,char const *)\n");
   return 0;
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectSetAttribute__SWIG_0(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_setSimObjectAttribute__SWIG_0(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5445,30 +5470,30 @@ SWIGINTERN PyObject *_wrap_SimObjectSetAttribute__SWIG_0(PyObject *self, PyObjec
   PyObject * obj2 = 0 ;
   PyObject * obj3 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOO:SimObjectSetAttribute",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:setSimObjectAttribute",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectSetAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "setSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectSetAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "setSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "SimObjectSetAttribute" "', argument " "3"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "setSimObjectAttribute" "', argument " "3"" of type '" "char const *""'");
   }
   arg3 = reinterpret_cast< char * >(buf3);
   res4 = SWIG_AsCharPtrAndSize(obj3, &buf4, NULL, &alloc4);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "SimObjectSetAttribute" "', argument " "4"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "setSimObjectAttribute" "', argument " "4"" of type '" "char const *""'");
   }
   arg4 = reinterpret_cast< char * >(buf4);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    SimObjectSetAttribute(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
+    setSimObjectAttribute(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_Py_Void();
@@ -5484,7 +5509,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectSetAttribute__SWIG_1(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_setSimObjectAttribute__SWIG_1(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5501,25 +5526,25 @@ SWIGINTERN PyObject *_wrap_SimObjectSetAttribute__SWIG_1(PyObject *self, PyObjec
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:SimObjectSetAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:setSimObjectAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectSetAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "setSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectSetAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "setSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "SimObjectSetAttribute" "', argument " "3"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "setSimObjectAttribute" "', argument " "3"" of type '" "char const *""'");
   }
   arg3 = reinterpret_cast< char * >(buf3);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    SimObjectSetAttribute(arg1,(char const *)arg2,(char const *)arg3);
+    setSimObjectAttribute(arg1,(char const *)arg2,(char const *)arg3);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_Py_Void();
@@ -5533,7 +5558,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectSetAttribute(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_setSimObjectAttribute(PyObject *self, PyObject *args) {
   int argc;
   PyObject *argv[5];
   int ii;
@@ -5555,7 +5580,7 @@ SWIGINTERN PyObject *_wrap_SimObjectSetAttribute(PyObject *self, PyObject *args)
         int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
         _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_SimObjectSetAttribute__SWIG_1(self, args);
+          return _wrap_setSimObjectAttribute__SWIG_1(self, args);
         }
       }
     }
@@ -5575,7 +5600,7 @@ SWIGINTERN PyObject *_wrap_SimObjectSetAttribute(PyObject *self, PyObject *args)
           int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
           _v = SWIG_CheckState(res);
           if (_v) {
-            return _wrap_SimObjectSetAttribute__SWIG_0(self, args);
+            return _wrap_setSimObjectAttribute__SWIG_0(self, args);
           }
         }
       }
@@ -5583,15 +5608,15 @@ SWIGINTERN PyObject *_wrap_SimObjectSetAttribute(PyObject *self, PyObject *args)
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'SimObjectSetAttribute'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'setSimObjectAttribute'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    SimObjectSetAttribute(SimObject *,char const *,char const *,char const *)\n"
-    "    SimObjectSetAttribute(SimObject *,char const *,char const *)\n");
+    "    setSimObjectAttribute(SimObject *,char const *,char const *,char const *)\n"
+    "    setSimObjectAttribute(SimObject *,char const *,char const *)\n");
   return 0;
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_0(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_isSimObjectAttribute__SWIG_0(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5612,30 +5637,30 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_0(PyObject *self, PyObject
   PyObject * obj3 = 0 ;
   bool result;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOOO:SimObjectIsAttribute",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOOO:isSimObjectAttribute",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectIsAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "isSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectIsAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "isSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   ecode3 = SWIG_AsVal_bool(obj2, &val3);
   if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "SimObjectIsAttribute" "', argument " "3"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "isSimObjectAttribute" "', argument " "3"" of type '" "bool""'");
   } 
   arg3 = static_cast< bool >(val3);
   ecode4 = SWIG_AsVal_bool(obj3, &val4);
   if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "SimObjectIsAttribute" "', argument " "4"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "isSimObjectAttribute" "', argument " "4"" of type '" "bool""'");
   } 
   arg4 = static_cast< bool >(val4);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (bool)SimObjectIsAttribute(arg1,(char const *)arg2,arg3,arg4);
+    result = (bool)isSimObjectAttribute(arg1,(char const *)arg2,arg3,arg4);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
@@ -5647,7 +5672,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_1(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_isSimObjectAttribute__SWIG_1(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5664,25 +5689,25 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_1(PyObject *self, PyObject
   PyObject * obj2 = 0 ;
   bool result;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:SimObjectIsAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:isSimObjectAttribute",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectIsAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "isSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectIsAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "isSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   ecode3 = SWIG_AsVal_bool(obj2, &val3);
   if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "SimObjectIsAttribute" "', argument " "3"" of type '" "bool""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "isSimObjectAttribute" "', argument " "3"" of type '" "bool""'");
   } 
   arg3 = static_cast< bool >(val3);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (bool)SimObjectIsAttribute(arg1,(char const *)arg2,arg3);
+    result = (bool)isSimObjectAttribute(arg1,(char const *)arg2,arg3);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
@@ -5694,7 +5719,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_2(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_isSimObjectAttribute__SWIG_2(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5707,20 +5732,20 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute__SWIG_2(PyObject *self, PyObject
   PyObject * obj1 = 0 ;
   bool result;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:SimObjectIsAttribute",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO:isSimObjectAttribute",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectIsAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "isSimObjectAttribute" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectIsAttribute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "isSimObjectAttribute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (bool)SimObjectIsAttribute(arg1,(char const *)arg2);
+    result = (bool)isSimObjectAttribute(arg1,(char const *)arg2);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
@@ -5732,7 +5757,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectIsAttribute(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_isSimObjectAttribute(PyObject *self, PyObject *args) {
   int argc;
   PyObject *argv[5];
   int ii;
@@ -5751,7 +5776,7 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute(PyObject *self, PyObject *args) 
       int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap_SimObjectIsAttribute__SWIG_2(self, args);
+        return _wrap_isSimObjectAttribute__SWIG_2(self, args);
       }
     }
   }
@@ -5769,7 +5794,7 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute(PyObject *self, PyObject *args) 
           _v = SWIG_CheckState(res);
         }
         if (_v) {
-          return _wrap_SimObjectIsAttribute__SWIG_1(self, args);
+          return _wrap_isSimObjectAttribute__SWIG_1(self, args);
         }
       }
     }
@@ -5793,7 +5818,7 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute(PyObject *self, PyObject *args) 
             _v = SWIG_CheckState(res);
           }
           if (_v) {
-            return _wrap_SimObjectIsAttribute__SWIG_0(self, args);
+            return _wrap_isSimObjectAttribute__SWIG_0(self, args);
           }
         }
       }
@@ -5801,16 +5826,16 @@ SWIGINTERN PyObject *_wrap_SimObjectIsAttribute(PyObject *self, PyObject *args) 
   }
   
 fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'SimObjectIsAttribute'.\n"
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'isSimObjectAttribute'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    SimObjectIsAttribute(SimObject *,char const *,bool,bool)\n"
-    "    SimObjectIsAttribute(SimObject *,char const *,bool)\n"
-    "    SimObjectIsAttribute(SimObject *,char const *)\n");
+    "    isSimObjectAttribute(SimObject *,char const *,bool,bool)\n"
+    "    isSimObjectAttribute(SimObject *,char const *,bool)\n"
+    "    isSimObjectAttribute(SimObject *,char const *)\n");
   return 0;
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectIsMethod(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_isSimObjectMethod(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   SimObject *arg1 = (SimObject *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -5823,20 +5848,20 @@ SWIGINTERN PyObject *_wrap_SimObjectIsMethod(PyObject *self, PyObject *args) {
   PyObject * obj1 = 0 ;
   bool result;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:SimObjectIsMethod",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO:isSimObjectMethod",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectIsMethod" "', argument " "1"" of type '" "SimObject *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "isSimObjectMethod" "', argument " "1"" of type '" "SimObject *""'"); 
   }
   arg1 = reinterpret_cast< SimObject * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectIsMethod" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "isSimObjectMethod" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (bool)SimObjectIsMethod(arg1,(char const *)arg2);
+    result = (bool)isSimObjectMethod(arg1,(char const *)arg2);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_From_bool(static_cast< bool >(result));
@@ -5848,149 +5873,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SimObjectGetDataFieldType__SWIG_0(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  SimObject *arg1 = (SimObject *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  U32 result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOO:SimObjectGetDataFieldType",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectGetDataFieldType" "', argument " "1"" of type '" "SimObject *""'"); 
-  }
-  arg1 = reinterpret_cast< SimObject * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectGetDataFieldType" "', argument " "2"" of type '" "char const *""'");
-  }
-  arg2 = reinterpret_cast< char * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "SimObjectGetDataFieldType" "', argument " "3"" of type '" "char const *""'");
-  }
-  arg3 = reinterpret_cast< char * >(buf3);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = SimObjectGetDataFieldType(arg1,(char const *)arg2,(char const *)arg3);
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  {
-    resultobj = PyInt_FromLong(result);
-  }
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return resultobj;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_SimObjectGetDataFieldType__SWIG_1(PyObject *self, PyObject *args) {
-  PyObject *resultobj = 0;
-  SimObject *arg1 = (SimObject *) 0 ;
-  char *arg2 = (char *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  U32 result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OO:SimObjectGetDataFieldType",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_SimObject, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SimObjectGetDataFieldType" "', argument " "1"" of type '" "SimObject *""'"); 
-  }
-  arg1 = reinterpret_cast< SimObject * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SimObjectGetDataFieldType" "', argument " "2"" of type '" "char const *""'");
-  }
-  arg2 = reinterpret_cast< char * >(buf2);
-  {
-    SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = SimObjectGetDataFieldType(arg1,(char const *)arg2);
-    SWIG_PYTHON_THREAD_END_ALLOW;
-  }
-  {
-    resultobj = PyInt_FromLong(result);
-  }
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return resultobj;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_SimObjectGetDataFieldType(PyObject *self, PyObject *args) {
-  int argc;
-  PyObject *argv[4];
-  int ii;
-  
-  if (!PyTuple_Check(args)) SWIG_fail;
-  argc = args ? (int)PyObject_Length(args) : 0;
-  for (ii = 0; (ii < 3) && (ii < argc); ii++) {
-    argv[ii] = PyTuple_GET_ITEM(args,ii);
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_SimObject, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_SimObjectGetDataFieldType__SWIG_1(self, args);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_SimObject, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
-        _v = SWIG_CheckState(res);
-        if (_v) {
-          return _wrap_SimObjectGetDataFieldType__SWIG_0(self, args);
-        }
-      }
-    }
-  }
-  
-fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'SimObjectGetDataFieldType'.\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    SimObjectGetDataFieldType(SimObject *,char const *,char const *)\n"
-    "    SimObjectGetDataFieldType(SimObject *,char const *)\n");
-  return 0;
-}
-
-
-SWIGINTERN PyObject *_wrap_GetVariable(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_getVariable(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
   int res1 ;
@@ -5999,15 +5882,15 @@ SWIGINTERN PyObject *_wrap_GetVariable(PyObject *self, PyObject *args) {
   PyObject * obj0 = 0 ;
   char *result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:GetVariable",&obj0)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"O:getVariable",&obj0)) SWIG_fail;
   res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "GetVariable" "', argument " "1"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "getVariable" "', argument " "1"" of type '" "char const *""'");
   }
   arg1 = reinterpret_cast< char * >(buf1);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    result = (char *)GetVariable((char const *)arg1);
+    result = (char *)getVariable((char const *)arg1);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_FromCharPtr((const char *)result);
@@ -6019,7 +5902,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_SetVariable(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_setVariable(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -6032,20 +5915,20 @@ SWIGINTERN PyObject *_wrap_SetVariable(PyObject *self, PyObject *args) {
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:SetVariable",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO:setVariable",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "SetVariable" "', argument " "1"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "setVariable" "', argument " "1"" of type '" "char const *""'");
   }
   arg1 = reinterpret_cast< char * >(buf1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "SetVariable" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "setVariable" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   {
     SWIG_PYTHON_THREAD_BEGIN_ALLOW;
-    SetVariable((char const *)arg1,(char const *)arg2);
+    setVariable((char const *)arg1,(char const *)arg2);
     SWIG_PYTHON_THREAD_END_ALLOW;
   }
   resultobj = SWIG_Py_Void();
@@ -6097,13 +5980,12 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"gethwnd", _wrap_gethwnd, METH_VARARGS, NULL},
 	 { (char *)"getSimObject", _wrap_getSimObject, METH_VARARGS, NULL},
 	 { (char *)"isFunction", _wrap_isFunction, METH_VARARGS, NULL},
-	 { (char *)"SimObjectGetAttribute", _wrap_SimObjectGetAttribute, METH_VARARGS, NULL},
-	 { (char *)"SimObjectSetAttribute", _wrap_SimObjectSetAttribute, METH_VARARGS, NULL},
-	 { (char *)"SimObjectIsAttribute", _wrap_SimObjectIsAttribute, METH_VARARGS, NULL},
-	 { (char *)"SimObjectIsMethod", _wrap_SimObjectIsMethod, METH_VARARGS, NULL},
-	 { (char *)"SimObjectGetDataFieldType", _wrap_SimObjectGetDataFieldType, METH_VARARGS, NULL},
-	 { (char *)"GetVariable", _wrap_GetVariable, METH_VARARGS, NULL},
-	 { (char *)"SetVariable", _wrap_SetVariable, METH_VARARGS, NULL},
+	 { (char *)"getSimObjectAttribute", _wrap_getSimObjectAttribute, METH_VARARGS, NULL},
+	 { (char *)"setSimObjectAttribute", _wrap_setSimObjectAttribute, METH_VARARGS, NULL},
+	 { (char *)"isSimObjectAttribute", _wrap_isSimObjectAttribute, METH_VARARGS, NULL},
+	 { (char *)"isSimObjectMethod", _wrap_isSimObjectMethod, METH_VARARGS, NULL},
+	 { (char *)"getVariable", _wrap_getVariable, METH_VARARGS, NULL},
+	 { (char *)"setVariable", _wrap_setVariable, METH_VARARGS, NULL},
 	 { (char *)"getSimObjectScript", _wrap_getSimObjectScript, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
